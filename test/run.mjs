@@ -14,9 +14,9 @@ if (!process.env.JEV_TEST_SANDBOX) {
 }
 
 import { strict as assert } from "node:assert";
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 
 import { _internal } from "../src/discover.mjs";
 import { planOverrides, STATE_ON, STATE_NAME_ONLY, STATE_HIDDEN } from "../src/gate.mjs";
@@ -27,6 +27,8 @@ import { _internal as jevInternal } from "../src/jev.mjs";
 import { setLogLevel } from "../src/log.mjs";
 import { readStats, recordRun, resetStats } from "../src/stats.mjs";
 import { cacheKey } from "../src/cache.mjs";
+import { runMigrations, readStateVersion, STATE_VERSION, STATE_VERSION_FILE } from "../src/migrate.mjs";
+import { compareVersions } from "../src/update.mjs";
 
 setLogLevel("silent");
 
@@ -333,6 +335,64 @@ test("cached local scores are never served to a run that has an API key", () => 
   const k1 = cacheKey(skills, state, cfg(), "fallback");
   const k2 = cacheKey(skills, state, cfg(), "gateway");
   assert.notEqual(k1, k2, "provider must be part of the cache key");
+});
+
+console.log("\nupdate safety");
+
+test("version comparison orders correctly", () => {
+  assert.equal(compareVersions("0.2.0", "0.1.0"), 1);
+  assert.equal(compareVersions("0.1.0", "0.2.0"), -1);
+  assert.equal(compareVersions("0.2.0", "0.2.0"), 0);
+  assert.equal(compareVersions("1.0.0", "0.9.9"), 1);
+  assert.equal(compareVersions("0.2", "0.2.0"), 0, "missing segments count as zero");
+  assert.equal(compareVersions("0.10.0", "0.9.0"), 1, "compares numerically, not as text");
+});
+
+test("a remote that is behind is recognised as a downgrade", () => {
+  // The update command syncs to a branch, which is not guaranteed to be ahead.
+  // Without this check it would silently walk a user backwards - and the first
+  // real run did exactly that, removing the update command itself.
+  const local = "0.2.0";
+  const remote = "0.1.0";
+  assert.ok(compareVersions(remote, local) < 0, "must be detected before anything is written");
+});
+
+console.log("\nmigrations");
+
+test("a fresh state dir needs no migration", () => {
+  // No state dir at all means a first install, not an ancient one.
+  assert.equal(readStateVersion(), STATE_VERSION);
+});
+
+test("an unversioned state dir is treated as v1 and migrated", () => {
+  resetStats(); // creates the state dir without a version file
+  const dir = dirname(STATE_VERSION_FILE);
+  writeJsonAtomic(join(dir, "cache.json"), { oldkey: { at: Date.now(), scores: {} } });
+  rmSync(STATE_VERSION_FILE, { force: true });
+
+  assert.equal(readStateVersion(), 1);
+  const r = runMigrations({ quiet: true });
+  assert.equal(r.migrated, true);
+  assert.equal(r.from, 1);
+  assert.equal(r.to, STATE_VERSION);
+  assert.equal(existsSync(join(dir, "cache.json")), false, "stale cache should be cleared");
+});
+
+test("migrating is idempotent", () => {
+  const first = runMigrations({ quiet: true });
+  const second = runMigrations({ quiet: true });
+  assert.equal(second.migrated, false, "a second run must do nothing");
+  assert.equal(readStateVersion(), STATE_VERSION);
+});
+
+test("migration never touches recorded stats", () => {
+  resetStats();
+  recordRun({ provider: "gateway", skills: 217, tokensBefore: 12750, tokensSaved: 9000, costUsd: 0.0009 });
+  rmSync(STATE_VERSION_FILE, { force: true });
+  runMigrations({ quiet: true });
+  const s = readStats();
+  assert.equal(s.totals.runs, 1, "stats must survive an update");
+  assert.equal(s.totals.tokensSaved, 9000);
 });
 
 console.log("\nstats");

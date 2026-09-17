@@ -17,6 +17,8 @@ import {
 import { clearCache } from "../src/cache.mjs";
 import { readStats, recordRun, resetStats, STATS_FILE } from "../src/stats.mjs";
 import { discoverSkills } from "../src/discover.mjs";
+import { runMigrations, readStateVersion, STATE_VERSION } from "../src/migrate.mjs";
+import { installedInfo, fetchRemote, applyUpdate, compareVersions } from "../src/update.mjs";
 
 const ENTRYPOINT = fileURLToPath(import.meta.url);
 const PKG_ROOT = resolve(dirname(ENTRYPOINT), "..");
@@ -407,6 +409,113 @@ function cmdStats(args) {
   return 0;
 }
 
+/**
+ * Self-update. Replaces the tracked source paths with the latest commit and
+ * runs any state migrations, so a user never has to reason about which on-disk
+ * formats changed between versions.
+ */
+async function cmdUpdate(args) {
+  const cfg = cfgFromArgs(args);
+  const local = installedInfo();
+
+  console.log(`\n  installed   v${local.version}${local.sha ? `  ${local.sha.slice(0, 7)}` : ""}`);
+  if (local.updatedAt) console.log(`              updated ${local.updatedAt.slice(0, 16).replace("T", " ")}`);
+
+  let remote;
+  try {
+    remote = await fetchRemote(cfg);
+  } catch (err) {
+    console.error(`\n  could not reach GitHub: ${err.message}`);
+    console.error("  check your connection, or set update.repo in the config for a fork\n");
+    return 1;
+  }
+
+  console.log(`  latest      ${remote.version ? `v${remote.version}  ` : ""}${remote.shortSha}  ${remote.message.slice(0, 60)}`);
+  if (remote.date) console.log(`              ${remote.date.slice(0, 16).replace("T", " ")}`);
+
+  const upToDate = local.sha && local.sha === remote.sha;
+  if (upToDate && !args.force) {
+    console.log("\n  already on the latest commit. --force to reinstall anyway.\n");
+    // Still migrate: a user who updated by hand may have stale state.
+    const m = runMigrations({ quiet: false });
+    if (m.migrated) for (const st of m.steps) console.log(`  migrated v${st.version}: ${st.note}`);
+    return 0;
+  }
+
+  // The remote branch is not guaranteed to be ahead. Installing it blindly is a
+  // sync, not an upgrade, and can walk a user backwards onto a version missing
+  // features they already rely on.
+  const older =
+    remote.version && local.version !== "unknown" && compareVersions(remote.version, local.version) < 0;
+  if (older && !args.force) {
+    console.error(`\n  remote is OLDER than what you have (v${remote.version} < v${local.version}).`);
+    console.error("  refusing to downgrade. pass --force if that is really what you want.\n");
+    return 1;
+  }
+
+  if (args.check) {
+    console.log(`\n  update available. run 'jev-skill-gate update' to install it.\n`);
+    return 0;
+  }
+
+  console.log("\n  downloading ...");
+  let res;
+  try {
+    res = await applyUpdate(remote, { dryRun: !!args["dry-run"] });
+  } catch (err) {
+    console.error(`\n  update failed: ${err.message}\n`);
+    return 1;
+  }
+
+  if (args["dry-run"]) {
+    console.log(`  would replace: ${res.changed.join(", ")}\n`);
+    return 0;
+  }
+
+  console.log(`  replaced    ${res.changed.join(", ")}`);
+
+  const m = runMigrations({ quiet: false });
+  if (m.migrated) {
+    console.log(`  migrated    state v${m.from} -> v${m.to}`);
+    for (const st of m.steps) console.log(`              v${st.version}: ${st.note}`);
+  } else {
+    console.log(`  state       already at v${STATE_VERSION}, nothing to migrate`);
+  }
+
+  // Stats survive an update by design: they live under ~/.claude, which the
+  // updater never writes to.
+  const stats = readStats();
+  if (stats.totals.runs > 0) {
+    console.log(`  kept        ${stats.totals.runs} recorded runs, ${stats.totals.tokensSaved.toLocaleString("en-US")} tokens saved`);
+  }
+
+  console.log(`\n  now on ${remote.shortSha}. run 'jev-skill-gate doctor' to confirm.\n`);
+  return 0;
+}
+
+/**
+ * Runs state migrations on their own.
+ *
+ * `install.sh` has already copied the new code by the time it needs migrations,
+ * so making it call `update --force` would download the whole tarball a second
+ * time and turn a network blip into a failure after a successful install.
+ */
+function cmdMigrate(args) {
+  const before = readStateVersion();
+  const m = runMigrations({ quiet: false });
+  if (!m.migrated) {
+    console.log(`state already at v${STATE_VERSION}, nothing to migrate`);
+    return 0;
+  }
+  console.log(`migrated state v${m.from} -> v${m.to}`);
+  for (const st of m.steps) console.log(`  v${st.version}: ${st.note}`);
+  if (m.error) {
+    console.error(`  stopped at v${m.to}: ${m.error}`);
+    return 1;
+  }
+  return 0;
+}
+
 function cmdDoctor(args) {
   const cfg = cfgFromArgs(args);
   const projectDir = resolve(args.dir || process.cwd());
@@ -421,6 +530,12 @@ function cmdDoctor(args) {
   check(skills.length > 0, "skills discovered", `${skills.length} skills, ~${tokens} tokens`);
   check(provider.kind !== "fallback", "jev provider", provider.kind === "fallback" ? provider.reason : provider.kind);
   check(true, "config", CONFIG_PATH);
+  const sv = readStateVersion();
+  check(
+    sv >= STATE_VERSION,
+    `state format v${sv}`,
+    sv >= STATE_VERSION ? "current" : `behind v${STATE_VERSION} — run 'jev-skill-gate update'`
+  );
   check(true, "state dir", STATE_DIR);
   check(true, "settings target", resolveSettingsPath(projectDir, cfg.scope || "auto"));
 
@@ -438,6 +553,8 @@ jev-skill-gate — gate Claude Code's skill manifest with TypeSafe Jev
   install     register the SessionStart hook in ~/.claude/settings.json
   uninstall   remove the hook and restore your original skillOverrides
   restore     restore skillOverrides without touching the hook
+  update      fetch the latest version and migrate on-disk state
+  migrate     run state migrations only (update does this for you)
   stats       lifetime tokens saved, cost, and how often it has run
   config      show or set provider, base URL, API key and model
   doctor      check the setup
@@ -453,6 +570,8 @@ Options
   --threshold-name-only <n> name-only cutoff (default 0.25)
   --max-on <n>              hard cap on full descriptions (default 40)
   --no-cache                ignore cached scores
+  --check                   (update) report whether a newer version exists
+  --force                   (update) reinstall even if already current
   --all                     show every skill in the table
   --verbose / --quiet
 
@@ -479,6 +598,8 @@ async function main() {
     doctor: cmdDoctor,
     config: cmdConfig,
     stats: cmdStats,
+    update: cmdUpdate,
+    migrate: cmdMigrate,
     "clear-cache": () => (clearCache(), console.log("cache cleared"), 0),
   };
 

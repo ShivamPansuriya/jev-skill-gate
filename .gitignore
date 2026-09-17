@@ -5,3 +5,5 @@ node_modules/
 .env.*
 *.jev-tmp-*
 .claude/settings.local.json
+.jev-install.json
+.jev-update.lock

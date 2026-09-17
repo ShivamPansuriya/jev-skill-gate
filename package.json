@@ -1,0 +1,31 @@
+{
+  "name": "jev-skill-gate",
+  "version": "0.1.0",
+  "description": "Gate Claude Code's skill manifest with TypeSafe Jev. Only relevant skills reach the context window.",
+  "type": "module",
+  "bin": {
+    "jev-skill-gate": "./bin/jev-skill-gate.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "node test/run.mjs"
+  },
+  "keywords": [
+    "claude-code",
+    "jev",
+    "typesafe",
+    "skills",
+    "context-window",
+    "hooks"
+  ],
+  "license": "MIT",
+  "dependencies": {}
+}

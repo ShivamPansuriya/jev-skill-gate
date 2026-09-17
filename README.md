@@ -1,5 +1,11 @@
 # jev-skill-gate
 
+[![release](https://img.shields.io/github/v/release/ShivamPansuriya/jev-skill-gate?color=2f81f7)](https://github.com/ShivamPansuriya/jev-skill-gate/releases)
+[![tests](https://img.shields.io/badge/tests-43%20passing-3fb950)](test/run.mjs)
+[![node](https://img.shields.io/badge/node-%E2%89%A518-5fa04e)](https://nodejs.org)
+[![dependencies](https://img.shields.io/badge/dependencies-none-3fb950)](package.json)
+[![license](https://img.shields.io/badge/license-MIT-8b949e)](LICENSE)
+
 Claude Code loads every skill description into context at session start, whether or not the skill has anything to do with what you are working on. On a machine with a full skills library that is roughly 10,000 tokens spent before you type anything.
 
 `jev-skill-gate` scores each skill against the project you are actually in, then writes `skillOverrides` so only relevant skills reach the model. Scoring runs on [TypeSafe's Jev](https://typesafe.ai), a decision model that returns calibrated probabilities instead of text, in one parallel pass over all your skills.

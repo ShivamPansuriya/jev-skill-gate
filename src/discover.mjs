@@ -75,6 +75,80 @@ function readSkill(skillMdPath, { source, namespace }) {
   };
 }
 
+/**
+ * A command file with no frontmatter still needs something to score against.
+ * Claude Code shows such a command by name; we do better by lifting its first
+ * real sentence out of the body, which is almost always a one-line summary.
+ */
+function describeFromBody(text) {
+  const body = text.replace(FRONTMATTER, "");
+  for (const line of body.split(/\r?\n/)) {
+    const t = line.trim();
+    if (!t || t.startsWith("#") || t.startsWith("```") || t.startsWith("---")) continue;
+    return t.replace(/[*_`]/g, "").slice(0, 300);
+  }
+  return "";
+}
+
+/**
+ * Custom commands are skills too.
+ *
+ * Claude Code merged `.claude/commands/` into the skill system: a file at
+ * `commands/deploy.md` and a skill at `skills/deploy/SKILL.md` both produce
+ * `/deploy` and both put their description in context. They are flat .md files
+ * rather than directories, and frontmatter is optional, so they need their own
+ * reader. Missing these leaves a large share of the manifest ungated - on this
+ * machine, 63 of 210 discoverable skills.
+ */
+function scanCommandsDir(commandsDir, { source, namespace }, depth = 0) {
+  const found = [];
+  let entries;
+  try {
+    entries = readdirSync(commandsDir, { withFileTypes: true });
+  } catch {
+    return found;
+  }
+
+  for (const e of entries) {
+    const p = join(commandsDir, e.name);
+
+    // One level of nesting is namespaced by Claude Code as `/<dir>:<command>`.
+    if (e.isDirectory() && depth === 0) {
+      const nested = namespace ? `${namespace}:${e.name}` : e.name;
+      found.push(...scanCommandsDir(p, { source, namespace: nested }, 1));
+      continue;
+    }
+    if (!e.isFile() || !e.name.endsWith(".md")) continue;
+
+    let raw;
+    try {
+      raw = readFileSync(p, "utf8").slice(0, 8000);
+    } catch {
+      continue;
+    }
+
+    const fm = parseFrontmatter(raw) || {};
+    const bare = (fm.name || e.name.replace(/\.md$/, "")).trim();
+    if (!bare) continue;
+
+    const description = (fm.description || describeFromBody(raw) || "").trim();
+    const name = namespace ? `${namespace}:${bare}` : bare;
+
+    found.push({
+      name,
+      bare,
+      namespace: namespace || null,
+      description,
+      path: p,
+      source,
+      modelInvocable: String(fm["disable-model-invocation"]).toLowerCase() !== "true",
+      userInvocable: String(fm["user-invocable"]).toLowerCase() !== "false",
+      approxTokens: Math.round((bare.length + description.length + 4) / 3.8),
+    });
+  }
+  return found;
+}
+
 function listDirs(dir) {
   try {
     return readdirSync(dir, { withFileTypes: true })
@@ -150,8 +224,13 @@ function scanEnabledPlugins(projectDir) {
     if (!install?.installPath) continue;
 
     const skillsDir = join(install.installPath, "skills");
-    if (!existsSync(skillsDir)) continue;
-    found.push(...scanSkillsDir(skillsDir, { source: "plugin", namespace: pluginName }));
+    if (existsSync(skillsDir)) {
+      found.push(...scanSkillsDir(skillsDir, { source: "plugin", namespace: pluginName }));
+    }
+    const commandsDir = join(install.installPath, "commands");
+    if (existsSync(commandsDir)) {
+      found.push(...scanCommandsDir(commandsDir, { source: "plugin", namespace: pluginName }));
+    }
   }
   return found;
 }
@@ -167,15 +246,19 @@ export function discoverSkills({ projectDir = process.cwd() } = {}) {
   const skills = [];
 
   skills.push(...scanSkillsDir(join(CLAUDE_DIR, "skills"), { source: "personal" }));
+  skills.push(...scanCommandsDir(join(CLAUDE_DIR, "commands"), { source: "personal-command" }));
   skills.push(...scanEnabledPlugins(projectDir));
 
   if (projectDir) {
     skills.push(...scanSkillsDir(join(projectDir, ".claude", "skills"), { source: "project" }));
+    skills.push(...scanCommandsDir(join(projectDir, ".claude", "commands"), { source: "project-command" }));
   }
 
   // Project skills win over personal ones of the same name, matching Claude Code.
   const byName = new Map();
-  const rank = { personal: 1, plugin: 1, project: 2 };
+  // A real skill directory wins over a bare command file of the same name,
+  // and project scope wins over personal, matching Claude Code.
+  const rank = { "personal-command": 0, "project-command": 1, personal: 1, plugin: 1, project: 2 };
   for (const s of skills) {
     const prev = byName.get(s.name);
     if (!prev || rank[s.source] >= rank[prev.source]) byName.set(s.name, s);
@@ -186,4 +269,4 @@ export function discoverSkills({ projectDir = process.cwd() } = {}) {
   return out;
 }
 
-export const _internal = { parseFrontmatter };
+export const _internal = { parseFrontmatter, describeFromBody };

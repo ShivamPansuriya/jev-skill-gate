@@ -76,7 +76,7 @@ function printPlan(result, { limit = 0 } = {}) {
 
   const rows = limit > 0 ? plan.decisions.slice(0, limit) : plan.decisions;
   for (const d of rows) {
-    const score = d.score === null ? "  --" : d.score.toFixed(2);
+    const score = d.score === null ? "kept" : d.score.toFixed(2);
     console.log(`  ${BADGE[d.state]} ${score}  ${d.skill.name}`);
   }
   if (limit > 0 && plan.decisions.length > limit) {

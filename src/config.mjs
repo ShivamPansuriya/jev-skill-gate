@@ -27,9 +27,20 @@ export const DEFAULTS = {
     apiKey: null,
   },
 
+  // Tuned against eval/RESULTS.md and eval/JEV-PARTIAL.md rather than guessed.
+  //
+  // Measured Jev distribution for a prompt: median ~0.06, long tail, with the
+  // primary skills for a request landing at 0.83-0.96. `on: 0.6` separates those
+  // cleanly.
+  //
+  // `nameOnly` started at 0.25 and hid two skills the user actually needed:
+  // inventory-demand-planning at 0.17 on a freight prompt, and security-review
+  // at 0.20 on a PR-review prompt. Secondary-but-relevant skills cluster in
+  // 0.15-0.60, so the floor moved to 0.15. Costs ~3 tokens each to keep; hiding
+  // one is silent.
   thresholds: {
     on: 0.6, // full description in context
-    nameOnly: 0.25, // name only, ~3 tokens
+    nameOnly: 0.15, // name only, ~3 tokens
     // below nameOnly -> "user-invocable-only" (hidden from Claude, /name still works)
   },
 
@@ -41,7 +52,12 @@ export const DEFAULTS = {
   // Fail-open guards. Hiding a skill is silent, so thin evidence must not
   // produce confident hiding.
   safety: {
-    minSignalTokens: 40,
+    // Bail out unless the top score clears the median by this much. Measures
+    // whether the scores discriminate, which is the thing that matters, rather
+    // than how long the input was.
+    minSeparation: 0.15,
+    // Cheap early-out for a literally empty prompt.
+    minStateTokens: 3,
   },
 
   scope: "auto", // auto | project | user
@@ -52,9 +68,15 @@ export const DEFAULTS = {
   ignore: [],
 
   // Request shaping
-  batchSize: 120, // questions per Jev call; the API takes up to 255
-  timeoutMs: 15000,
-  maxRetries: 2,
+  // Jev evaluates up to 255 questions in one parallel pass, and the request
+  // budget is ~32k tokens. One batch per session is both cheapest and least
+  // likely to trip a rate limit.
+  batchSize: 250,
+  // Batches run sequentially by default. Firing them in parallel trips
+  // free-tier rate limits on the very first run with a large skill library.
+  concurrency: 1,
+  timeoutMs: 20000,
+  maxRetries: 4,
 
   cacheTtlHours: 168, // 7 days
   logLevel: "info", // silent | info | debug

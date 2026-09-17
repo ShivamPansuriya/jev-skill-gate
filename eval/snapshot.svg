@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="404" viewBox="0 0 760 404" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="13">
+  <title>jev-skill-gate preview — a Rust prompt selects Rust skills</title>
+  <desc>Verbatim terminal output: a borrow-checker prompt ranks rust-build, rust-review, rust-patterns, rust-testing and rust-test as the top five of 217 installed skills, cutting the manifest from 12,750 to 3,185 tokens.</desc>
+
+  <rect width="760" height="404" rx="8" fill="#12151c"/>
+  <rect width="760" height="30" rx="8" fill="#1b1f29"/>
+  <rect y="22" width="760" height="8" fill="#1b1f29"/>
+  <circle cx="20" cy="15" r="5" fill="#ec6a5e"/>
+  <circle cx="38" cy="15" r="5" fill="#f4bf50"/>
+  <circle cx="56" cy="15" r="5" fill="#61c554"/>
+  <text x="380" y="19" fill="#8b93a7" font-size="11" text-anchor="middle">jev-skill-gate</text>
+
+  <text x="18" y="56" fill="#61c554">$</text>
+  <text x="34" y="56" fill="#d6dbe6">jev-skill-gate preview --prompt <tspan fill="#f4bf50">"My Rust build is failing with a</tspan></text>
+  <text x="34" y="76" fill="#f4bf50">borrow checker error in an async handler"</text>
+
+  <text x="18" y="108" fill="#8b93a7">provider</text><text x="118" y="108" fill="#d6dbe6">fallback</text>
+  <text x="18" y="128" fill="#8b93a7">skills</text><text x="118" y="128" fill="#d6dbe6">217 discovered</text>
+  <text x="18" y="148" fill="#8b93a7">verdict</text><text x="118" y="148" fill="#d6dbe6">38 full · 0 name-only · 179 hidden</text>
+  <text x="18" y="168" fill="#8b93a7">tokens</text><text x="118" y="168" fill="#d6dbe6">12750 <tspan fill="#8b93a7">-&gt;</tspan> 3185  <tspan fill="#61c554">(saved ~9565)</tspan></text>
+
+  <text x="18" y="206" fill="#61c554">ON</text><text x="90" y="206" fill="#8b93a7">1.00</text><text x="150" y="206" fill="#7aa2f7">rust-build</text>
+  <text x="18" y="226" fill="#61c554">ON</text><text x="90" y="226" fill="#8b93a7">1.00</text><text x="150" y="226" fill="#7aa2f7">rust-review</text>
+  <text x="18" y="246" fill="#61c554">ON</text><text x="90" y="246" fill="#8b93a7">0.99</text><text x="150" y="246" fill="#7aa2f7">rust-patterns</text>
+  <text x="18" y="266" fill="#61c554">ON</text><text x="90" y="266" fill="#8b93a7">0.99</text><text x="150" y="266" fill="#7aa2f7">rust-testing</text>
+  <text x="18" y="286" fill="#61c554">ON</text><text x="90" y="286" fill="#8b93a7">0.98</text><text x="150" y="286" fill="#7aa2f7">rust-test</text>
+  <text x="18" y="306" fill="#61c554">ON</text><text x="90" y="306" fill="#8b93a7">0.98</text><text x="150" y="306" fill="#d6dbe6">cpp-build</text>
+  <text x="18" y="326" fill="#61c554">ON</text><text x="90" y="326" fill="#8b93a7">0.97</text><text x="150" y="326" fill="#d6dbe6">build-fix</text>
+  <text x="18" y="346" fill="#61c554">ON</text><text x="90" y="346" fill="#8b93a7">0.97</text><text x="150" y="346" fill="#d6dbe6">kotlin-build</text>
+  <text x="18" y="366" fill="#5c6478">...</text><text x="150" y="366" fill="#5c6478">209 more</text>
+
+  <text x="18" y="392" fill="#5c6478" font-size="11">Every Rust skill installed on this machine is in the top five of 217.</text>
+</svg>

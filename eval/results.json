@@ -1,0 +1,1866 @@
+{
+  "summary": {
+    "generatedAt": "2026-09-17T19:49:49.291Z",
+    "provider": "fallback",
+    "skillCount": 217,
+    "totalManifestTokens": 12750,
+    "caseCount": 20,
+    "scoredCaseCount": 18,
+    "meanAuc": 0.960648148148148,
+    "minAuc": 0.75,
+    "perfectAucCases": 14,
+    "medianExpectedRank": 4,
+    "totalAntiInTop10": 0,
+    "evalCostUsd": 0,
+    "grid": [
+      {
+        "on": 0.6,
+        "nameOnly": 0.15,
+        "maxOn": 5,
+        "maxNameOnly": 60,
+        "hiddenExpected": [
+          {
+            "case": "freight",
+            "skill": "inventory-demand-planning",
+            "score": 0
+          },
+          {
+            "case": "content",
+            "skill": "x-api",
+            "score": 0
+          },
+          {
+            "case": "laravel-sec",
+            "skill": "security-review",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-coding-standards",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-review",
+            "score": 0
+          }
+        ],
+        "recallOn": 0.6428571428571429,
+        "recallVisible": 0.9285714285714286,
+        "meanTokensSaved": 12140,
+        "meanSavedPct": 0.9521263616557735,
+        "meanHidden": 180,
+        "meanAdversarialHidden": 0,
+        "sweptBy": "maxOn"
+      },
+      {
+        "on": 0.6,
+        "nameOnly": 0.15,
+        "maxOn": 10,
+        "maxNameOnly": 60,
+        "hiddenExpected": [
+          {
+            "case": "freight",
+            "skill": "inventory-demand-planning",
+            "score": 0
+          },
+          {
+            "case": "content",
+            "skill": "x-api",
+            "score": 0
+          },
+          {
+            "case": "laravel-sec",
+            "skill": "security-review",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-coding-standards",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-review",
+            "score": 0
+          }
+        ],
+        "recallOn": 0.8428571428571429,
+        "recallVisible": 0.9285714285714286,
+        "meanTokensSaved": 11845,
+        "meanSavedPct": 0.9290065359477124,
+        "meanHidden": 180,
+        "meanAdversarialHidden": 0,
+        "sweptBy": "maxOn"
+      },
+      {
+        "on": 0.6,
+        "nameOnly": 0.15,
+        "maxOn": 15,
+        "maxNameOnly": 60,
+        "hiddenExpected": [
+          {
+            "case": "freight",
+            "skill": "inventory-demand-planning",
+            "score": 0
+          },
+          {
+            "case": "content",
+            "skill": "x-api",
+            "score": 0
+          },
+          {
+            "case": "laravel-sec",
+            "skill": "security-review",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-coding-standards",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-review",
+            "score": 0
+          }
+        ],
+        "recallOn": 0.8857142857142857,
+        "recallVisible": 0.9285714285714286,
+        "meanTokensSaved": 11521,
+        "meanSavedPct": 0.9036165577342048,
+        "meanHidden": 180,
+        "meanAdversarialHidden": 0,
+        "sweptBy": "maxOn"
+      },
+      {
+        "on": 0.6,
+        "nameOnly": 0.15,
+        "maxOn": 20,
+        "maxNameOnly": 60,
+        "hiddenExpected": [
+          {
+            "case": "freight",
+            "skill": "inventory-demand-planning",
+            "score": 0
+          },
+          {
+            "case": "content",
+            "skill": "x-api",
+            "score": 0
+          },
+          {
+            "case": "laravel-sec",
+            "skill": "security-review",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-coding-standards",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-review",
+            "score": 0
+          }
+        ],
+        "recallOn": 0.8857142857142857,
+        "recallVisible": 0.9285714285714286,
+        "meanTokensSaved": 11111,
+        "meanSavedPct": 0.8714684095860566,
+        "meanHidden": 180,
+        "meanAdversarialHidden": 0,
+        "sweptBy": "maxOn"
+      },
+      {
+        "on": 0.6,
+        "nameOnly": 0.15,
+        "maxOn": 30,
+        "maxNameOnly": 60,
+        "hiddenExpected": [
+          {
+            "case": "freight",
+            "skill": "inventory-demand-planning",
+            "score": 0
+          },
+          {
+            "case": "content",
+            "skill": "x-api",
+            "score": 0
+          },
+          {
+            "case": "laravel-sec",
+            "skill": "security-review",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-coding-standards",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-review",
+            "score": 0
+          }
+        ],
+        "recallOn": 0.9285714285714286,
+        "recallVisible": 0.9285714285714286,
+        "meanTokensSaved": 10529,
+        "meanSavedPct": 0.8258300653594771,
+        "meanHidden": 180,
+        "meanAdversarialHidden": 0,
+        "sweptBy": "maxOn"
+      },
+      {
+        "on": 0.6,
+        "nameOnly": 0.15,
+        "maxOn": 40,
+        "maxNameOnly": 60,
+        "hiddenExpected": [
+          {
+            "case": "freight",
+            "skill": "inventory-demand-planning",
+            "score": 0
+          },
+          {
+            "case": "content",
+            "skill": "x-api",
+            "score": 0
+          },
+          {
+            "case": "laravel-sec",
+            "skill": "security-review",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-coding-standards",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-review",
+            "score": 0
+          }
+        ],
+        "recallOn": 0.9285714285714286,
+        "recallVisible": 0.9285714285714286,
+        "meanTokensSaved": 10157,
+        "meanSavedPct": 0.7965969498910676,
+        "meanHidden": 180,
+        "meanAdversarialHidden": 0,
+        "sweptBy": "maxOn"
+      },
+      {
+        "on": 0.6,
+        "nameOnly": 0.15,
+        "maxOn": 60,
+        "maxNameOnly": 60,
+        "hiddenExpected": [
+          {
+            "case": "freight",
+            "skill": "inventory-demand-planning",
+            "score": 0
+          },
+          {
+            "case": "content",
+            "skill": "x-api",
+            "score": 0
+          },
+          {
+            "case": "laravel-sec",
+            "skill": "security-review",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-coding-standards",
+            "score": 0
+          },
+          {
+            "case": "cpp-build",
+            "skill": "cpp-review",
+            "score": 0
+          }
+        ],
+        "recallOn": 0.9285714285714286,
+        "recallVisible": 0.9285714285714286,
+        "meanTokensSaved": 9998,
+        "meanSavedPct": 0.7841873638344227,
+        "meanHidden": 180,
+        "meanAdversarialHidden": 0,
+        "sweptBy": "maxOn"
+      }
+    ]
+  },
+  "perCase": [
+    {
+      "id": "rust-borrow",
+      "adversarial": false,
+      "prompt": "My Rust build is failing with a borrow checker error in an async handler and the lifetimes do not line up",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "rust-patterns",
+          "rank": 3,
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "rust-build",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "rust-review",
+          "rank": 2,
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "rust-testing",
+          "rank": 4,
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "rust-test",
+          "rank": 5,
+          "score": 0.9814814814814815
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "carrier-relationship-management",
+          "rank": 51,
+          "score": 0
+        },
+        {
+          "name": "video-editing",
+          "rank": 32,
+          "score": 0.8564814814814815
+        },
+        {
+          "name": "investor-outreach",
+          "rank": 136,
+          "score": 0
+        },
+        {
+          "name": "visa-doc-translate",
+          "rank": 216,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 3,
+      "medianAntiRank": 136,
+      "expectedInTop10": 5,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "rust-build",
+          "score": 1
+        },
+        {
+          "name": "rust-review",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "rust-patterns",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "rust-testing",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "rust-test",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "django-api",
+      "adversarial": false,
+      "prompt": "Write a Django REST Framework endpoint for user authentication with pytest tests and check it for security holes",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "django-patterns",
+          "rank": 3,
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "django-tdd",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "django-security",
+          "rank": 2,
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "django-verification",
+          "rank": 4,
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "api-design",
+          "rank": 28,
+          "score": 0.875
+        },
+        {
+          "name": "python-testing",
+          "rank": 13,
+          "score": 0.9444444444444444
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "video-editing",
+          "rank": 214,
+          "score": 0
+        },
+        {
+          "name": "energy-procurement",
+          "rank": 106,
+          "score": 0
+        },
+        {
+          "name": "liquid-glass-design",
+          "rank": 155,
+          "score": 0
+        },
+        {
+          "name": "frontend-slides",
+          "rank": 114,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 4,
+      "medianAntiRank": 155,
+      "expectedInTop10": 4,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "django-tdd",
+          "score": 1
+        },
+        {
+          "name": "django-security",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "django-patterns",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "django-verification",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "security-review",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "freight",
+      "adversarial": false,
+      "prompt": "I need to negotiate freight rates with our carriers and build a performance scorecard for the quarterly review",
+      "auc": 0.7916666666666666,
+      "expected": [
+        {
+          "name": "carrier-relationship-management",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "logistics-exception-management",
+          "rank": 11,
+          "score": 0.9537037037037037
+        },
+        {
+          "name": "inventory-demand-planning",
+          "rank": 134,
+          "score": 0
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "rust-patterns",
+          "rank": 188,
+          "score": 0
+        },
+        {
+          "name": "swiftui-patterns",
+          "rank": 24,
+          "score": 0.8935185185185185
+        },
+        {
+          "name": "cpp-testing",
+          "rank": 84,
+          "score": 0
+        },
+        {
+          "name": "shadcn",
+          "rank": 196,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 11,
+      "medianAntiRank": 188,
+      "expectedInTop10": 1,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "carrier-relationship-management",
+          "score": 1
+        },
+        {
+          "name": "code-review",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "perform-ai-code-review",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "cpp-build",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "build-fix",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "pr-review",
+      "adversarial": false,
+      "prompt": "Review this pull request thoroughly, grill the author on test quality, and check the blast radius before I merge",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "perform-ai-code-review",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "code-review",
+          "rank": 2,
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "security-review",
+          "rank": 24,
+          "score": 0.8935185185185185
+        },
+        {
+          "name": "test-coverage",
+          "rank": 7,
+          "score": 0.9722222222222222
+        },
+        {
+          "name": "onelens",
+          "rank": 14,
+          "score": 0.9398148148148148
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "video-editing",
+          "rank": 214,
+          "score": 0
+        },
+        {
+          "name": "energy-procurement",
+          "rank": 108,
+          "score": 0
+        },
+        {
+          "name": "investor-materials",
+          "rank": 144,
+          "score": 0
+        },
+        {
+          "name": "visa-doc-translate",
+          "rank": 216,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 7,
+      "medianAntiRank": 214,
+      "expectedInTop10": 3,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "perform-ai-code-review",
+          "score": 1
+        },
+        {
+          "name": "code-review",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "quality-gate",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "quality-nonconformance",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "plankton-code-quality",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "video",
+      "adversarial": false,
+      "prompt": "Edit this footage into a short clip and generate an AI voiceover track for it",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "video-editing",
+          "rank": 2,
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "videodb",
+          "rank": 25,
+          "score": 0.8888888888888888
+        },
+        {
+          "name": "fal-ai-media",
+          "rank": 7,
+          "score": 0.9722222222222222
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "jpa-patterns",
+          "rank": 132,
+          "score": 0
+        },
+        {
+          "name": "postgres-patterns",
+          "rank": 168,
+          "score": 0
+        },
+        {
+          "name": "rust-testing",
+          "rank": 191,
+          "score": 0
+        },
+        {
+          "name": "customs-trade-compliance",
+          "rank": 78,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 7,
+      "medianAntiRank": 168,
+      "expectedInTop10": 2,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "ai-first-engineering",
+          "score": 1
+        },
+        {
+          "name": "video-editing",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "ai-regression-testing",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "hyperresearch-prd-26-patcher",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "perform-ai-code-review",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "kmp-compose",
+      "adversarial": false,
+      "prompt": "Design a Kotlin Multiplatform app using Compose with coroutines and flows, following clean architecture",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "compose-multiplatform-patterns",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "kotlin-coroutines-flows",
+          "rank": 2,
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "kotlin-patterns",
+          "rank": 4,
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "android-clean-architecture",
+          "rank": 3,
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "kotlin-testing",
+          "rank": 8,
+          "score": 0.9675925925925926
+        },
+        {
+          "name": "kotlin-review",
+          "rank": 6,
+          "score": 0.9768518518518519
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "energy-procurement",
+          "rank": 104,
+          "score": 0
+        },
+        {
+          "name": "perl-patterns",
+          "rank": 162,
+          "score": 0
+        },
+        {
+          "name": "investor-outreach",
+          "rank": 137,
+          "score": 0
+        },
+        {
+          "name": "video-editing",
+          "rank": 214,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 4,
+      "medianAntiRank": 162,
+      "expectedInTop10": 6,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "compose-multiplatform-patterns",
+          "score": 1
+        },
+        {
+          "name": "kotlin-coroutines-flows",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "android-clean-architecture",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "kotlin-patterns",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "refactor-clean",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "spring-jpa",
+      "adversarial": false,
+      "prompt": "My Spring Boot service has an N+1 query problem in a JPA repository and the endpoint is timing out",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "springboot-patterns",
+          "rank": 3,
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "jpa-patterns",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "java-coding-standards",
+          "rank": 8,
+          "score": 0.9675925925925926
+        },
+        {
+          "name": "springboot-verification",
+          "rank": 5,
+          "score": 0.9814814814814815
+        },
+        {
+          "name": "postgres-patterns",
+          "rank": 11,
+          "score": 0.9537037037037037
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "video-editing",
+          "rank": 214,
+          "score": 0
+        },
+        {
+          "name": "frontend-slides",
+          "rank": 101,
+          "score": 0
+        },
+        {
+          "name": "returns-reverse-logistics",
+          "rank": 182,
+          "score": 0
+        },
+        {
+          "name": "swiftui-patterns",
+          "rank": 203,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 5,
+      "medianAntiRank": 203,
+      "expectedInTop10": 4,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "jpa-patterns",
+          "score": 1
+        },
+        {
+          "name": "onelens",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "springboot-patterns",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "springboot-security",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "springboot-verification",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "swiftui",
+      "adversarial": false,
+      "prompt": "Build a SwiftUI view with Swift 6 strict concurrency and persist state in an actor",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "swiftui-patterns",
+          "rank": 2,
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "swift-concurrency-6-2",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "swift-actor-persistence",
+          "rank": 3,
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "swift-protocol-di-testing",
+          "rank": 4,
+          "score": 0.9861111111111112
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "django-patterns",
+          "rank": 89,
+          "score": 0
+        },
+        {
+          "name": "energy-procurement",
+          "rank": 98,
+          "score": 0
+        },
+        {
+          "name": "carrier-relationship-management",
+          "rank": 46,
+          "score": 0
+        },
+        {
+          "name": "perl-testing",
+          "rank": 168,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 3,
+      "medianAntiRank": 98,
+      "expectedInTop10": 4,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "swift-concurrency-6-2",
+          "score": 1
+        },
+        {
+          "name": "swiftui-patterns",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "swift-actor-persistence",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "swift-protocol-di-testing",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "cpp-build",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "postgres",
+      "adversarial": false,
+      "prompt": "This Postgres query is slow and I need to write a zero-downtime migration to add an index",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "postgres-patterns",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "database-migrations",
+          "rank": 2,
+          "score": 0.9953703703703703
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "video-editing",
+          "rank": 214,
+          "score": 0
+        },
+        {
+          "name": "frontend-slides",
+          "rank": 100,
+          "score": 0
+        },
+        {
+          "name": "investor-outreach",
+          "rank": 127,
+          "score": 0
+        },
+        {
+          "name": "swiftui-patterns",
+          "rank": 203,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 2,
+      "medianAntiRank": 203,
+      "expectedInTop10": 2,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "postgres-patterns",
+          "score": 1
+        },
+        {
+          "name": "database-migrations",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "agentation",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "claw",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "agentation-self-driving",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "go-concurrency",
+      "adversarial": false,
+      "prompt": "I have a goroutine leak and a race condition in my Go service, and the benchmarks regressed",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "golang-patterns",
+          "rank": 6,
+          "score": 0.9768518518518519
+        },
+        {
+          "name": "golang-pro",
+          "rank": 4,
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "golang-testing",
+          "rank": 3,
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "go-review",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "go-test",
+          "rank": 5,
+          "score": 0.9814814814814815
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "laravel-security",
+          "rank": 136,
+          "score": 0
+        },
+        {
+          "name": "energy-procurement",
+          "rank": 85,
+          "score": 0
+        },
+        {
+          "name": "video-editing",
+          "rank": 214,
+          "score": 0
+        },
+        {
+          "name": "investor-materials",
+          "rank": 122,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 4,
+      "medianAntiRank": 136,
+      "expectedInTop10": 5,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "go-review",
+          "score": 1
+        },
+        {
+          "name": "go-build",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "golang-testing",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "golang-pro",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "go-test",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "docker-deploy",
+      "adversarial": false,
+      "prompt": "Containerize this service and set up a CI pipeline with health checks and a rollback strategy",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "docker-patterns",
+          "rank": 10,
+          "score": 0.9583333333333334
+        },
+        {
+          "name": "deployment-patterns",
+          "rank": 1,
+          "score": 1
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "video-editing",
+          "rank": 22,
+          "score": 0.9027777777777778
+        },
+        {
+          "name": "customs-trade-compliance",
+          "rank": 78,
+          "score": 0
+        },
+        {
+          "name": "swiftui-patterns",
+          "rank": 204,
+          "score": 0
+        },
+        {
+          "name": "investor-outreach",
+          "rank": 128,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 10,
+      "medianAntiRank": 128,
+      "expectedInTop10": 2,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "deployment-patterns",
+          "score": 1
+        },
+        {
+          "name": "skill-health",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "docs",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "pm2",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "ralphinho-rfc-pipeline",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "content",
+      "adversarial": false,
+      "prompt": "Write a technical blog post about our launch and adapt it for LinkedIn and X",
+      "auc": 0.875,
+      "expected": [
+        {
+          "name": "article-writing",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "content-engine",
+          "rank": 5,
+          "score": 0.9814814814814815
+        },
+        {
+          "name": "crosspost",
+          "rank": 6,
+          "score": 0.9768518518518519
+        },
+        {
+          "name": "x-api",
+          "rank": 217,
+          "score": 0
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "jpa-patterns",
+          "rank": 126,
+          "score": 0
+        },
+        {
+          "name": "cpp-testing",
+          "rank": 64,
+          "score": 0
+        },
+        {
+          "name": "postgres-patterns",
+          "rank": 164,
+          "score": 0
+        },
+        {
+          "name": "rust-build",
+          "rank": 182,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 6,
+      "medianAntiRank": 164,
+      "expectedInTop10": 3,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "article-writing",
+          "score": 1
+        },
+        {
+          "name": "kotlin-test",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "cpp-test",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "rust-test",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "content-engine",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "research",
+      "adversarial": false,
+      "prompt": "Do deep research on this market with citations from primary sources and give me a report",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "deep-research",
+          "rank": 2,
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "hyperresearch",
+          "rank": 5,
+          "score": 0.9814814814814815
+        },
+        {
+          "name": "market-research",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "exa-search",
+          "rank": 6,
+          "score": 0.9768518518518519
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "jpa-patterns",
+          "rank": 130,
+          "score": 0
+        },
+        {
+          "name": "docker-patterns",
+          "rank": 87,
+          "score": 0
+        },
+        {
+          "name": "swiftui-patterns",
+          "rank": 204,
+          "score": 0
+        },
+        {
+          "name": "cpp-testing",
+          "rank": 73,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 5,
+      "medianAntiRank": 130,
+      "expectedInTop10": 4,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "market-research",
+          "score": 1
+        },
+        {
+          "name": "deep-research",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "find-skills",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "prompt-optimizer",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "hyperresearch",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "prd",
+      "adversarial": false,
+      "prompt": "Turn this feature request into a full product requirements document with user stories and flows",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "hyperresearch-prd",
+          "rank": 6,
+          "score": 0.9768518518518519
+        },
+        {
+          "name": "hyperresearch-prd-21-personas-stories",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "hyperresearch-prd-22-flows-entities",
+          "rank": 4,
+          "score": 0.9861111111111112
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "rust-build",
+          "rank": 185,
+          "score": 0
+        },
+        {
+          "name": "cpp-testing",
+          "rank": 82,
+          "score": 0
+        },
+        {
+          "name": "video-editing",
+          "rank": 22,
+          "score": 0.9027777777777778
+        },
+        {
+          "name": "perl-patterns",
+          "rank": 163,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 4,
+      "medianAntiRank": 163,
+      "expectedInTop10": 3,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "hyperresearch-prd-21-personas-stories",
+          "score": 1
+        },
+        {
+          "name": "hyperresearch-prd-18-product-inventory",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "nutrient-document-processing",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "hyperresearch-prd-22-flows-entities",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "hyperresearch-prd-19-feature-decomposition",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "laravel-sec",
+      "adversarial": false,
+      "prompt": "Audit this Laravel app for SQL injection and CSRF issues and add tests for the fixes",
+      "auc": 0.875,
+      "expected": [
+        {
+          "name": "laravel-security",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "laravel-tdd",
+          "rank": 3,
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "laravel-patterns",
+          "rank": 6,
+          "score": 0.9768518518518519
+        },
+        {
+          "name": "laravel-verification",
+          "rank": 2,
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "security-review",
+          "rank": 194,
+          "score": 0
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "video-editing",
+          "rank": 214,
+          "score": 0
+        },
+        {
+          "name": "energy-procurement",
+          "rank": 107,
+          "score": 0
+        },
+        {
+          "name": "swiftui-patterns",
+          "rank": 205,
+          "score": 0
+        },
+        {
+          "name": "golang-testing",
+          "rank": 37,
+          "score": 0.8333333333333334
+        }
+      ],
+      "medianExpectedRank": 3,
+      "medianAntiRank": 205,
+      "expectedInTop10": 4,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "laravel-security",
+          "score": 1
+        },
+        {
+          "name": "laravel-verification",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "laravel-tdd",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "django-security",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "laravel-plugin-discovery",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "cpp-build",
+      "adversarial": false,
+      "prompt": "My CMake build is failing with a template instantiation error and a linker problem",
+      "auc": 0.75,
+      "expected": [
+        {
+          "name": "cpp-build",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "cpp-coding-standards",
+          "rank": 76,
+          "score": 0
+        },
+        {
+          "name": "cpp-testing",
+          "rank": 6,
+          "score": 0.9768518518518519
+        },
+        {
+          "name": "cpp-review",
+          "rank": 77,
+          "score": 0
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "django-patterns",
+          "rank": 87,
+          "score": 0
+        },
+        {
+          "name": "carrier-relationship-management",
+          "rank": 43,
+          "score": 0
+        },
+        {
+          "name": "investor-outreach",
+          "rank": 132,
+          "score": 0
+        },
+        {
+          "name": "x-api",
+          "rank": 217,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 76,
+      "medianAntiRank": 132,
+      "expectedInTop10": 2,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "cpp-build",
+          "score": 1
+        },
+        {
+          "name": "build-fix",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "kotlin-build",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "rust-build",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "gradle-build",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "energy",
+      "adversarial": false,
+      "prompt": "We need to optimize our electricity tariffs across facilities and evaluate a renewable PPA",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "energy-procurement",
+          "rank": 1,
+          "score": 1
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "rust-patterns",
+          "rank": 182,
+          "score": 0
+        },
+        {
+          "name": "swiftui-patterns",
+          "rank": 204,
+          "score": 0
+        },
+        {
+          "name": "shadcn",
+          "rank": 192,
+          "score": 0
+        },
+        {
+          "name": "cpp-testing",
+          "rank": 72,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 1,
+      "medianAntiRank": 192,
+      "expectedInTop10": 1,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "energy-procurement",
+          "score": 1
+        },
+        {
+          "name": "prompt-optimize",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "learn-eval",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "laravel-plugin-discovery",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "impeccable",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "mcp-server",
+      "adversarial": false,
+      "prompt": "Build an MCP server that exposes tools to Claude, and check the API docs for the SDK",
+      "auc": 1,
+      "expected": [
+        {
+          "name": "mcp-server-patterns",
+          "rank": 1,
+          "score": 1
+        },
+        {
+          "name": "claude-api",
+          "rank": 4,
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "context7-mcp",
+          "rank": 12,
+          "score": 0.9490740740740741
+        }
+      ],
+      "antiExpected": [
+        {
+          "name": "energy-procurement",
+          "rank": 99,
+          "score": 0
+        },
+        {
+          "name": "carrier-relationship-management",
+          "rank": 51,
+          "score": 0
+        },
+        {
+          "name": "video-editing",
+          "rank": 34,
+          "score": 0.8472222222222222
+        },
+        {
+          "name": "visa-doc-translate",
+          "rank": 217,
+          "score": 0
+        }
+      ],
+      "medianExpectedRank": 4,
+      "medianAntiRank": 99,
+      "expectedInTop10": 2,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "mcp-server-patterns",
+          "score": 1
+        },
+        {
+          "name": "docs",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "update-docs",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "claude-api",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "backend-patterns",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "adversarial-vague-fix",
+      "adversarial": true,
+      "prompt": "fix it",
+      "auc": null,
+      "expected": [],
+      "antiExpected": [],
+      "medianExpectedRank": null,
+      "medianAntiRank": null,
+      "expectedInTop10": 0,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "build-fix",
+          "score": 1
+        },
+        {
+          "name": "gradle-build",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "cpp-build",
+          "score": 0.9907407407407407
+        },
+        {
+          "name": "kotlin-build",
+          "score": 0.9861111111111112
+        },
+        {
+          "name": "rust-build",
+          "score": 0.9814814814814815
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "adversarial-vague-faster",
+      "adversarial": true,
+      "prompt": "make this faster",
+      "auc": null,
+      "expected": [],
+      "antiExpected": [],
+      "medianExpectedRank": null,
+      "medianAntiRank": null,
+      "expectedInTop10": 0,
+      "antiInTop10": 0,
+      "top5": [
+        {
+          "name": "andrej-karpathy-skills:karpathy-guidelines",
+          "score": 1
+        },
+        {
+          "name": "i-have-adhd:i-have-adhd",
+          "score": 0.9953703703703703
+        },
+        {
+          "name": "agent-harness-construction",
+          "score": 0
+        },
+        {
+          "name": "agentation",
+          "score": 0
+        },
+        {
+          "name": "agentation-self-driving",
+          "score": 0
+        }
+      ],
+      "dist": {
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 1
+      }
+    }
+  ]
+}

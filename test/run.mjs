@@ -113,26 +113,47 @@ test("a skill Claude cannot auto-invoke is left alone", () => {
   assert.deepEqual(overrides, {});
 });
 
-test("maxOn caps full descriptions even when everything scores high", () => {
+test("maxOn caps full descriptions even when many skills clear the threshold", () => {
   const skills = Array.from({ length: 30 }, (_, i) => skill(`s${i}`));
-  const scores = new Map(skills.map((s) => [s.name, 0.99]));
+  // All above thresholds.on, but separated, so the guard does not fire and the
+  // cap is what limits the result.
+  const scores = new Map(skills.map((s, i) => [s.name, 0.99 - i * 0.012]));
   const { stats } = planOverrides(skills, scores, cfg({ maxOn: 5 }));
   assert.equal(stats.on, 5);
 });
 
-test("thin signal fails open instead of hiding everything", () => {
+test("undifferentiated scores fail open instead of hiding everything", () => {
   const skills = Array.from({ length: 10 }, (_, i) => skill(`s${i}`));
-  const scores = new Map(skills.map((s) => [s.name, 0]));
-  const res = planOverrides(skills, scores, cfg(), { calibrated: false, signalStrength: 3 });
-  assert.equal(res.bailedOut, "weak-signal");
+  // Everything scores the same: no evidence, so nothing may be hidden.
+  const scores = new Map(skills.map((s) => [s.name, 0.4]));
+  const res = planOverrides(skills, scores, cfg(), { calibrated: true, signalStrength: 500 });
+  assert.equal(res.bailedOut, "no-separation");
   assert.deepEqual(res.overrides, {});
   assert.equal(res.stats.hidden, 0);
+});
+
+test("a short but discriminating prompt is NOT treated as weak", () => {
+  // Ten words pointing clearly at one skill is strong evidence. Judging by
+  // input length instead of separation would wrongly bail here.
+  const skills = Array.from({ length: 20 }, (_, i) => skill(`s${i}`));
+  const scores = new Map(skills.map((s, i) => [s.name, i < 3 ? 0.9 : 0.1]));
+  const res = planOverrides(skills, scores, cfg(), { calibrated: true, signalStrength: 9 });
+  assert.equal(res.bailedOut, undefined);
+  assert.ok(res.stats.hidden > 0, "should gate when scores clearly separate");
+});
+
+test("an empty prompt fails open", () => {
+  const skills = Array.from({ length: 10 }, (_, i) => skill(`s${i}`));
+  const scores = new Map(skills.map((s, i) => [s.name, i === 0 ? 0.9 : 0.1]));
+  const res = planOverrides(skills, scores, cfg(), { calibrated: true, signalStrength: 1 });
+  assert.equal(res.bailedOut, "empty-input");
 });
 
 test("uncalibrated scores take a rank slice, not a threshold", () => {
   const skills = Array.from({ length: 10 }, (_, i) => skill(`s${i}`));
   // Every score sits below thresholds.on; a threshold pass would hide them all.
-  const scores = new Map(skills.map((s, i) => [s.name, 0.1 + i * 0.01]));
+  // Spread far enough that the separation guard does not fire.
+  const scores = new Map(skills.map((s, i) => [s.name, i / 10]));
   const res = planOverrides(skills, scores, cfg({ maxOn: 3, maxNameOnly: 3 }), {
     calibrated: false,
     signalStrength: 500,

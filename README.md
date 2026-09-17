@@ -4,12 +4,67 @@ Claude Code loads every skill description into context at session start, whether
 
 `jev-skill-gate` scores each skill against the project you are actually in, then writes `skillOverrides` so only relevant skills reach the model. Scoring runs on [TypeSafe's Jev](https://typesafe.ai), a decision model that returns calibrated probabilities instead of text, in one parallel pass over all your skills.
 
+![jev-skill-gate selecting Rust skills for a Rust prompt](eval/snapshot.svg)
+
+## Does it pick the right skills?
+
+That is the only question that matters — a gate that saves tokens by hiding what you needed is worse than no gate. So there is a committed eval, not a claim.
+
+**20 labeled cases · 217 installed skills · every label validated against the live inventory before the run.** Each case lists skills that *should* rank high and skills that are unambiguously irrelevant. State is the **prompt only**, with no project signals helping, which is the harder test.
+
+| Metric | Local scorer (free) | Jev (partial run) |
+| --- | --- | --- |
+| Mean pairwise AUC | **0.961** | not yet measured across all cases |
+| Cases with perfect separation | 14 / 18 | — |
+| Median rank of an expected skill | **4** of 217 | 1–3 for primary skills |
+| Irrelevant skills reaching any top 10 | **0** | 0 in any top 5 |
+| Expected skills surviving the gate | **92.9%** | — |
+| Skills hidden on a contentless prompt | **0** | — |
+
+AUC is the share of (expected, irrelevant) pairs where the expected skill scored higher. 1.0 is perfect, 0.5 is a coin flip.
+
+Full report: **[eval/RESULTS.md](eval/RESULTS.md)** · raw scores: [eval/raw-scores.json](eval/raw-scores.json) · cases: [eval/cases.json](eval/cases.json) · inventory: [eval/skills-inventory.tsv](eval/skills-inventory.tsv)
+
+```bash
+node eval/run-eval.mjs --local --fresh   # free, no key, ~2 seconds
+node eval/run-eval.mjs --reuse           # re-derive every number from committed scores
 ```
-  provider   typesafe
-  skills     147 discovered
-  verdict    38 full · 44 name-only · 65 hidden
-  tokens     10696 -> 3204  (saved ~7492)
-```
+
+### What Jev buys over the free scorer
+
+Jev scored 5 of 6 scenarios before the account's free-tier quota ran out. Those numbers are in **[eval/JEV-PARTIAL.md](eval/JEV-PARTIAL.md)**, and the missing scenario is left blank rather than estimated.
+
+Where the two differ is instructive. The local TF-IDF scorer hid five labeled skills, **every one at a score of exactly 0.00** — meaning zero literal word overlap:
+
+| Prompt | Skill it hid |
+| --- | --- |
+| "CMake build failing, template instantiation error" | `cpp-review` |
+| "Audit this Laravel app for SQL injection" | `security-review` |
+| "Write a blog post and adapt it for LinkedIn and X" | `x-api` |
+
+These are obvious semantic matches with no shared vocabulary. That is precisely the gap a model closes and a bag-of-words cannot. Jev put `security-review` at 0.93 on the Django auth prompt, where TF-IDF scored the same skill 0.00 on a near-identical Laravel one.
+
+### How much is saved, and how
+
+The saving is not a guess — it is the sum of the description tokens for every skill moved out of full visibility.
+
+| | tokens |
+| --- | --- |
+| 217 discoverable skills, full manifest | **12,750** |
+| after gating a Rust prompt | **3,185** |
+| saved | **9,565 (75%)** |
+
+Per skill, the three states cost:
+
+| State | Cost | Claude sees |
+| --- | --- | --- |
+| `on` | full description, ~60 tokens | name + description |
+| `name-only` | ~3 tokens | name |
+| `user-invocable-only` | 0 tokens | nothing |
+
+`/context` reports 9.9k for skills on this machine against the 12,750 estimated here; the estimator counts characters at 3.8/token and runs slightly high. The *savings ratio* is what transfers, not the absolute figure.
+
+Cost to compute: **one Jev request per session**, 217 questions in a single parallel pass, ~17.7k input tokens, **$0.00074**, cached for 7 days.
 
 ## What it actually changes
 

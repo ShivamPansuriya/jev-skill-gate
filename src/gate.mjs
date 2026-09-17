@@ -26,14 +26,28 @@ export function planOverrides(skills, scores, cfg, meta = {}) {
   const ignore = new Set(cfg.ignore || []);
   const calibrated = meta.calibrated !== false;
 
-  // Thin evidence is the dangerous case: an empty or brand-new directory gives
-  // the scorer almost nothing, and a naive threshold pass would then hide
-  // everything. Hiding a skill is silent - Claude never learns it existed - so
-  // when there is not enough signal we fail open instead.
-  const signal = meta.signalStrength ?? Infinity;
-  const thinSignal = signal < (cfg.safety?.minSignalTokens ?? 40);
-  if (thinSignal) {
-    log.warn(`weak project signal (${signal} tokens); leaving every skill visible`);
+  // Thin evidence is the dangerous case: "fix it", or a brand-new directory,
+  // gives the scorer nothing to go on, and a threshold pass would then hide
+  // almost everything. Hiding is silent - Claude never learns the skill existed
+  // - so with no real evidence we fail open instead.
+  //
+  // The test is whether the scores SEPARATE, not how long the input was. A
+  // ten-word prompt that clearly points at Rust is strong evidence; a
+  // two-hundred-word README that matches everything equally is not. Measuring
+  // length instead of separation conflates the two, and treats every real
+  // prompt as weak.
+  const values = [...scores.values()].sort((a, b) => b - a);
+  const separation = values.length > 1 ? values[0] - values[Math.floor(values.length / 2)] : 0;
+  const minSeparation = cfg.safety?.minSeparation ?? 0.15;
+  const tooShort = (meta.signalStrength ?? Infinity) < (cfg.safety?.minStateTokens ?? 3);
+
+  if (tooShort || (values.length > 1 && separation < minSeparation)) {
+    log.warn(
+      tooShort
+        ? "empty input; leaving every skill visible"
+        : `scores do not separate (top ${values[0]?.toFixed(2)} vs median ` +
+            `${values[Math.floor(values.length / 2)]?.toFixed(2)}); leaving every skill visible`
+    );
     return {
       overrides: {},
       decisions: skills.map((skill) => ({ skill, score: null, state: STATE_ON, reason: "weak signal" })),
@@ -45,7 +59,7 @@ export function planOverrides(skills, scores, cfg, meta = {}) {
         approxTokensBefore: skills.reduce((n, s) => n + s.approxTokens, 0),
         approxTokensSaved: 0,
       },
-      bailedOut: "weak-signal",
+      bailedOut: tooShort ? "empty-input" : "no-separation",
     };
   }
 
@@ -120,7 +134,15 @@ export function planOverrides(skills, scores, cfg, meta = {}) {
 
   return {
     overrides,
-    decisions: all.sort((a, b) => (b.score ?? 1) - (a.score ?? 1)),
+    // Scored skills first, highest first. Skills kept without a score (pinned,
+    // unscored, or not model-invocable) sort last: they are not "best matches"
+    // and listing them on top misrepresents the ranking.
+    decisions: all.sort((a, b) => {
+      if (a.score === null && b.score === null) return a.skill.name.localeCompare(b.skill.name);
+      if (a.score === null) return 1;
+      if (b.score === null) return -1;
+      return b.score - a.score;
+    }),
     stats: {
       total: skills.length,
       on: all.filter((d) => d.state === STATE_ON).length,

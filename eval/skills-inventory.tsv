@@ -1,0 +1,148 @@
+name	source	approx_tokens	description
+agent-harness-construction	personal	39	Design and optimize AI agent action spaces, tool definitions, and observation formatting for higher completion rates.
+agentation	personal	19	Add Agentation visual feedback toolbar to a Next.js project
+agentation-self-driving	personal	115	Autonomous design critique mode using the Agentation annotation toolbar. Use when the user asks to "critique this page," "add design annotations," "review the U
+agentic-engineering	personal	33	Operate as an agentic engineer using eval-first execution, decomposition, and cost-aware model routing.
+ai-first-engineering	personal	33	Engineering operating model for teams where AI agents generate a large share of implementation output.
+ai-regression-testing	personal	67	Regression testing strategies for AI-assisted development. Sandbox-mode API testing without database dependencies, automated bug-check workflows, and patterns t
+andrej-karpathy-skills:karpathy-guidelines	plugin	64	Behavioral guidelines to reduce common LLM coding mistakes. Use when writing, reviewing, or refactoring code to avoid overcomplication, make surgical changes, s
+android-clean-architecture	personal	50	Clean Architecture patterns for Android and Kotlin Multiplatform projects — module structure, dependency rules, UseCases, Repositories, and data layer patterns.
+api-design	personal	45	REST API design patterns including resource naming, status codes, pagination, filtering, error responses, versioning, and rate limiting for production APIs.
+article-writing	personal	87	Write articles, guides, blog posts, tutorials, newsletter issues, and other long-form content in a distinctive voice derived from supplied examples or brand gui
+autonomous-loops	personal	40	Patterns and architectures for autonomous Claude Code loops — from simple sequential pipelines to RFC-driven multi-agent DAG systems.
+backend-patterns	personal	43	Backend architecture patterns, API design, database optimization, and server-side best practices for Node.js, Express, and Next.js API routes.
+blueprint	personal	154	Turn a one-line objective into a step-by-step construction plan for multi-session, multi-agent engineering projects. Each step has a self-contained context brie
+carrier-relationship-management	personal	126	Codified expertise for managing carrier portfolios, negotiating freight rates, tracking carrier performance, allocating freight, and maintaining strategic carri
+claude-api	personal	67	Anthropic Claude API patterns for Python and TypeScript. Covers Messages API, streaming, tool use, vision, extended thinking, batches, prompt caching, and Claud
+claude-devfleet	personal	49	Orchestrate multi-agent coding tasks via Claude DevFleet — plan projects, dispatch parallel agents in isolated worktrees, monitor progress, and read structured 
+clickhouse-io	personal	41	ClickHouse database patterns, query optimization, analytics, and data engineering best practices for high-performance analytical workloads.
+codex:codex-cli-runtime	plugin	27	Internal helper contract for calling the codex-companion runtime from Claude Code
+codex:codex-result-handling	plugin	25	Internal guidance for presenting Codex helper output back to the user
+codex:gpt-5-4-prompting	plugin	43	Internal guidance for composing Codex and GPT-5.4 prompts for coding, review, diagnosis, and research tasks inside the Codex Claude Code plugin
+coding-standards	personal	36	Universal coding standards, best practices, and patterns for TypeScript, JavaScript, React, and Node.js development.
+compose-multiplatform-patterns	personal	48	Compose Multiplatform and Jetpack Compose patterns for KMP projects — state management, navigation, theming, performance, and platform-specific UI.
+configure-ecc	personal	61	Interactive installer for Everything Claude Code — guides users through selecting and installing skills and rules to user-level or project-level directories, ve
+content-engine	personal	72	Create platform-native content systems for X, LinkedIn, TikTok, YouTube, newsletters, and repurposed multi-platform campaigns. Use when the user wants social po
+content-hash-cache-pattern	personal	44	Cache expensive file processing results using SHA-256 content hashes — path-independent, auto-invalidating, with service layer separation.
+context-mode:context-mode	plugin	253	Use context-mode tools (ctx_execute, ctx_execute_file) instead of Bash/cat when processing large outputs. Triggers: "analyze logs", "summarize output", "process
+context-mode:context-mode-ops	plugin	94	Manage context-mode GitHub issues, PRs, releases, and marketing with parallel subagent army. Orchestrates 10-20 dynamic agents per task. Use when triaging issue
+context-mode:ctx-doctor	plugin	42	Run context-mode diagnostics. Checks runtimes, hooks, FTS5, plugin registration, npm and marketplace versions. Trigger: /context-mode:ctx-doctor
+context-mode:ctx-insight	plugin	83	Open the context-mode Insight analytics dashboard in the browser. Shows personal metrics: session activity, tool usage, error rate, parallel work patterns, proj
+context-mode:ctx-purge	plugin	51	Purge the context-mode knowledge base. Permanently deletes all indexed content and resets session stats. This is destructive and cannot be undone. Trigger: /con
+context-mode:ctx-stats	plugin	77	Show how much context window context-mode saved this session. Displays token consumption, context savings ratio, and per-tool breakdown. Read-only — shows stats
+context-mode:ctx-upgrade	plugin	46	Update context-mode from GitHub and fix hooks/settings. Pulls latest, builds, installs, updates npm global, configures hooks. Trigger: /context-mode:ctx-upgrade
+context7-mcp	personal	74	This skill should be used when the user asks about libraries, frameworks, API references, or needs code examples. Activates for setup questions, code generation
+continuous-agent-loop	personal	32	Patterns for continuous autonomous agent loops with quality gates, evals, and recovery controls.
+continuous-learning	personal	36	Automatically extract reusable patterns from Claude Code sessions and save them as learned skills for future use.
+continuous-learning-v2	personal	69	Instinct-based learning system that observes sessions via hooks, creates atomic instincts with confidence scoring, and evolves them into skills/commands/agents.
+cost-aware-llm-pipeline	personal	41	Cost optimization patterns for LLM API usage — model routing by task complexity, budget tracking, retry logic, and prompt caching.
+cpp-coding-standards	personal	53	C++ coding standards based on the C++ Core Guidelines (isocpp.github.io). Use when writing, reviewing, or refactoring C++ code to enforce modern, safe, and idio
+cpp-testing	personal	42	Use only when writing/updating/fixing C++ tests, configuring GoogleTest/CTest, diagnosing failing or flaky tests, or adding coverage/sanitizers.
+crosspost	personal	70	Multi-platform content distribution across X, LinkedIn, Threads, and Bluesky. Adapts content per platform using content-engine patterns. Never posts identical c
+customs-trade-compliance	personal	130	Codified expertise for customs documentation, tariff classification, duty optimization, restricted party screening, and regulatory compliance across multiple ju
+data-scraper-agent	personal	109	Build a fully automated AI-powered data collection agent for any public source — job boards, prices, news, GitHub, sports, anything. Scrapes on a schedule, enri
+database-migrations	personal	62	Database migration best practices for schema changes, data migrations, rollbacks, and zero-downtime deployments across PostgreSQL, MySQL, and common ORMs (Prism
+deep-research	personal	66	Multi-source deep research using firecrawl and exa MCPs. Searches the web, synthesizes findings, and delivers cited reports with source attribution. Use when th
+deployment-patterns	personal	49	Deployment workflows, CI/CD pipeline patterns, Docker containerization, health checks, rollback strategies, and production readiness checklists for web applicat
+django-patterns	personal	42	Django architecture patterns, REST API design with DRF, ORM best practices, caching, signals, middleware, and production-grade Django apps.
+django-security	personal	47	Django security best practices, authentication, authorization, CSRF protection, SQL injection prevention, XSS prevention, and secure deployment configurations.
+django-tdd	personal	39	Django testing strategies with pytest-django, TDD methodology, factory_boy, mocking, coverage, and testing Django REST Framework APIs.
+django-verification	personal	46	Verification loop for Django projects: migrations, linting, tests with coverage, security scans, and deployment readiness checks before release or PR.
+dmux-workflows	personal	76	Multi-agent orchestration using dmux (tmux pane manager for AI agents). Patterns for parallel agent workflows across Claude Code, Codex, OpenCode, and other har
+docker-patterns	personal	42	Docker and Docker Compose patterns for local development, container security, networking, volume strategies, and multi-service orchestration.
+e2e-testing	personal	39	Playwright E2E testing patterns, Page Object Model, configuration, CI/CD integration, artifact management, and flaky test strategies.
+energy-procurement	personal	142	Codified expertise for electricity and gas procurement, tariff optimization, demand charge management, renewable PPA evaluation, and multi-facility energy cost 
+enterprise-agent-ops	personal	33	Operate long-lived agent workloads with observability, security boundaries, and lifecycle management.
+eval-harness	personal	32	Formal evaluation framework for Claude Code sessions implementing eval-driven development (EDD) principles
+exa-search	personal	57	Neural search via Exa MCP for web, code, and company research. Use when the user needs web search, code examples, company intel, people lookup, or AI-powered de
+fal-ai-media	personal	77	Unified media generation via fal.ai MCP — image, video, and audio. Covers text-to-image (Nano Banana), text/image-to-video (Seedance, Kling, Veo 3), text-to-spe
+find-skills	personal	84	Helps users discover and install agent skills when they ask questions like "how do I do X", "find a skill for X", "is there a skill that can...", or express int
+foundation-models-on-device	personal	48	Apple FoundationModels framework for on-device LLM — text generation, guided generation with @Generable, tool calling, and snapshot streaming in iOS 26+.
+frontend-design:frontend-design	plugin	59	Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making ch
+frontend-patterns	personal	36	Frontend development patterns for React, Next.js, state management, performance optimization, and UI best practices.
+frontend-slides	personal	87	Create stunning, animation-rich HTML presentations from scratch or by converting PowerPoint files. Use when the user wants to build a presentation, convert a PP
+golang-patterns	personal	37	Idiomatic Go patterns, best practices, and conventions for building robust, efficient, and maintainable Go applications.
+golang-pro	personal	131	Implements concurrent Go patterns using goroutines and channels, designs and builds microservices with gRPC or REST, optimizes Go application performance with p
+golang-testing	personal	45	Go testing patterns including table-driven tests, subtests, benchmarks, fuzzing, and test coverage. Follows TDD methodology with idiomatic Go practices.
+gsd-2-orchestration	personal	93	Orchestrate GSD 2.0 instances as workers for research, coding, and implementation tasks. Use whenever delegating heavy work to GSD — coding slices, research spr
+hyperresearch	personal	173	Deep research via the HYPERRESEARCH V8 architecture — a tier-adaptive 18-step pipeline (light / full) that scales from a ~30-minute light-tier answer to a 1.5–2
+hyperresearch-prd	personal	184	PRD generation via the HYPERRESEARCH-PRD architecture — a tier-adaptive 14-step pipeline (light / full) that turns a feature request plus a completed hyperresea
+hyperresearch-prd-17-initialize	personal	114	Step 17 of the hyperresearch-PRD pipeline. Decomposes the canonical feature request into atomic items, classifies pipeline_tier and prd_format, and produces the
+hyperresearch-prd-18-product-inventory	personal	109	Step 18 of the hyperresearch-PRD pipeline. Scans the PRD directory to build a structured inventory of the existing product — modules, personas, entities, flows,
+hyperresearch-prd-19-feature-decomposition	personal	97	Step 19 of the hyperresearch-PRD pipeline. Refines the atomic decomposition from step 17 by reconciling it with the existing product inventory from step 18. Pro
+hyperresearch-prd-20-integration-map	personal	96	Step 20 of the hyperresearch-PRD pipeline. Maps each in-scope capability and entity to the existing modules, surfaces, and flows it touches — described function
+hyperresearch-prd-21-personas-stories	personal	68	Step 21 of the hyperresearch-PRD pipeline. Writes the persona descriptions and per-persona user stories that ground the rest of the PRD in real user motivation.
+hyperresearch-prd-22-flows-entities	personal	69	Step 22 of the hyperresearch-PRD pipeline. Builds step-by-step user flows and user-facing entity field lists. Full tier only. Produces flows.md and entities.md.
+hyperresearch-prd-23-triple-draft	personal	83	Step 23 of the hyperresearch-PRD pipeline. For full tier: spawns 3 prd-draft-orchestrator subagents in parallel, each writing one angle-specific PRD draft. For 
+hyperresearch-prd-24-synthesize	personal	122	Step 24 of the hyperresearch-PRD pipeline. Reads the 3 angle-specific PRD drafts from step 23, spot-checks factual conflicts, writes a synthesis plan + outline,
+hyperresearch-prd-25-critics	personal	101	Step 25 of the hyperresearch-PRD pipeline. Spawns 4 adversarial critics in parallel against the synthesized PRD: business-value, scope-creep, integration-feasib
+hyperresearch-prd-26-patcher	personal	100	Step 26 of the hyperresearch-PRD pipeline. Spawns the prd-patcher subagent (TOOL-LOCKED to Read + Edit) to apply patch-doable critic findings as surgical Edit h
+hyperresearch-prd-27-polish	personal	118	Step 27 of the hyperresearch-PRD pipeline. Spawns the prd-polish-auditor subagent (TOOL-LOCKED to Read + Edit) for the final hygiene + readability pass. Strips 
+hyperresearch-prd-28-readability-audit	personal	144	Step 28 (final) of the hyperresearch-PRD pipeline. Spawns the prd-readability-recommender subagent (Read+Write tool-locked) to audit the polished PRD and write 
+hyperresearch-prd-29-author-diagrams	personal	143	Step 29 of the hyperresearch-PRD pipeline. Reads the polished + readability- audited final PRD and inserts Mermaid diagram blocks that visualise the PRD's load-
+hyperresearch-prd-30-render-html	personal	112	Step 30 (FINAL) of the hyperresearch-PRD pipeline. Renders the diagram- enriched PRD markdown into a single self-contained HTML file the engineering team can op
+i-have-adhd:i-have-adhd	plugin	68	Shape output for a reader with ADHD: lead with the next action, number multi-step work, restate state across turns, suppress tangents, give specific time estima
+impeccable	personal	239	Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise
+inventory-demand-planning	personal	136	Codified expertise for demand forecasting, safety stock optimization, replenishment planning, and promotional lift estimation at multi-location retailers. Infor
+investor-materials	personal	89	Create and update pitch decks, one-pagers, investor memos, accelerator applications, financial models, and fundraising materials. Use when the user needs invest
+investor-outreach	personal	73	Draft cold emails, warm intro blurbs, follow-ups, update emails, and investor communications for fundraising. Use when the user wants outreach to angels, VCs, s
+iterative-retrieval	personal	30	Pattern for progressively refining context retrieval to solve the subagent context problem
+java-coding-standards	personal	42	Java coding standards for Spring Boot services: naming, immutability, Optional usage, streams, exceptions, generics, and project layout.
+jpa-patterns	personal	44	JPA/Hibernate patterns for entity design, relationships, query optimization, transactions, auditing, indexing, pagination, and pooling in Spring Boot.
+kotlin-coroutines-flows	personal	43	Kotlin Coroutines and Flow patterns for Android and KMP — structured concurrency, Flow operators, StateFlow, error handling, and testing.
+kotlin-exposed-patterns	personal	47	JetBrains Exposed ORM patterns including DSL queries, DAO pattern, transactions, HikariCP connection pooling, Flyway migrations, and repository pattern.
+kotlin-ktor-patterns	personal	43	Ktor server patterns including routing DSL, plugins, authentication, Koin DI, kotlinx.serialization, WebSockets, and testApplication testing.
+kotlin-patterns	personal	51	Idiomatic Kotlin patterns, best practices, and conventions for building robust, efficient, and maintainable Kotlin applications with coroutines, null safety, an
+kotlin-testing	personal	48	Kotlin testing patterns with Kotest, MockK, coroutine testing, property-based testing, and Kover coverage. Follows TDD methodology with idiomatic Kotlin practic
+laravel-patterns	personal	43	Laravel architecture patterns, routing/controllers, Eloquent ORM, service layers, queues, events, caching, and API resources for production apps.
+laravel-plugin-discovery	personal	50	Discover and evaluate Laravel packages via LaraPlugins.io MCP. Use when the user wants to find plugins, check package health, or assess Laravel/PHP compatibilit
+laravel-security	personal	43	Laravel security best practices for authn/authz, validation, CSRF, mass assignment, file uploads, secrets, rate limiting, and secure deployment.
+laravel-tdd	personal	34	Test-driven development for Laravel with PHPUnit and Pest, factories, database testing, fakes, and coverage targets.
+laravel-verification	personal	43	Verification loop for Laravel projects: env checks, linting, static analysis, tests with coverage, security scans, and deployment readiness.
+liquid-glass-design	personal	43	iOS 26 Liquid Glass design system — dynamic glass material with blur, reflection, and interactive morphing for SwiftUI, UIKit, and WidgetKit.
+logistics-exception-management	personal	108	Codified expertise for handling freight exceptions, shipment delays, damages, losses, and carrier disputes. Informed by logistics professionals with 15+ years o
+market-research	personal	82	Conduct market research, competitive analysis, investor due diligence, and industry intelligence with source attribution and decision-oriented summaries. Use wh
+mcp-server-patterns	personal	49	Build MCP servers with Node/TypeScript SDK — tools, resources, prompts, Zod validation, stdio vs Streamable HTTP. Use Context7 or official MCP docs for latest A
+nanoclaw-repl	personal	29	Operate and extend NanoClaw v2, ECC's zero-dependency session-aware REPL built on claude -p.
+nutrient-document-processing	personal	47	Process, convert, OCR, extract, redact, sign, and fill documents using the Nutrient DWS API. Works with PDFs, DOCX, XLSX, PPTX, HTML, and images.
+onelens	personal	220	Query the OneLens code knowledge graph — Java / Kotlin / Spring Boot backends, Vue 3 / Pinia / vue-router frontends, JPA entities, Flyway migrations, custom SQL
+perform-ai-code-review	personal	227	AI-powered PR review pipeline with Socratic questioning. Multi-phase parallel analysis: intent verification, standards compliance, blast radius (OneLens-powered
+perl-patterns	personal	33	Modern Perl 5.36+ idioms, best practices, and conventions for building robust, maintainable Perl applications.
+perl-security	personal	52	Comprehensive Perl security covering taint mode, input validation, safe process execution, DBI parameterized queries, web security (XSS/SQLi/CSRF), and perlcrit
+perl-testing	personal	36	Perl testing patterns using Test2::V0, Test::More, prove runner, mocking, coverage with Devel::Cover, and TDD methodology.
+plankton-code-quality	personal	42	Write-time code quality enforcement using Plankton — auto-formatting, linting, and Claude-powered fixes on every file edit via hooks.
+postgres-patterns	personal	38	PostgreSQL database patterns for query optimization, schema design, indexing, and security. Based on Supabase best practices.
+production-scheduling	personal	134	Codified expertise for production scheduling, job sequencing, line balancing, changeover optimization, and bottleneck resolution in discrete and batch manufactu
+project-guidelines-example	personal	29	Example project-specific skill template based on a real production application.
+prompt-optimizer	personal	193	Analyze raw prompts, identify intent and gaps, match ECC components (skills/commands/agents/hooks), and output a ready-to-paste optimized prompt. Advisory role 
+python-patterns	personal	40	Pythonic idioms, PEP 8 standards, type hints, and best practices for building robust, efficient, and maintainable Python applications.
+python-testing	personal	36	Python testing strategies using pytest, TDD methodology, fixtures, mocking, parametrization, and coverage requirements.
+quality-nonconformance	personal	143	Codified expertise for quality control, non-conformance investigation, root cause analysis, corrective action, and supplier quality management in regulated manu
+ralphinho-rfc-pipeline	personal	35	RFC-driven multi-agent DAG execution pattern with quality gates, merge queues, and work unit orchestration.
+regex-vs-llm-structured-text	personal	47	Decision framework for choosing between regex and LLM when parsing structured text — start with regex, add LLM only for low-confidence edge cases.
+returns-reverse-logistics	personal	127	Codified expertise for returns authorization, receipt and inspection, disposition decisions, refund processing, fraud detection, and warranty claims management.
+rust-patterns	personal	40	Idiomatic Rust patterns, ownership, error handling, traits, concurrency, and best practices for building safe, performant applications.
+rust-testing	personal	43	Rust testing patterns including unit tests, integration tests, async testing, property-based testing, mocking, and coverage. Follows TDD methodology.
+search-first	personal	41	Research-before-coding workflow. Search for existing tools, libraries, and patterns before writing custom code. Invokes the researcher agent.
+security-review	personal	60	Use this skill when adding authentication, handling user input, working with secrets, creating API endpoints, or implementing payment/sensitive features. Provid
+security-scan	personal	62	Scan your Claude Code configuration (.claude/ directory) for security vulnerabilities, misconfigurations, and injection risks using AgentShield. Checks CLAUDE.m
+shadcn	personal	104	Manages shadcn components and projects — adding, searching, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage ex
+skill-stocktake	personal	49	Use when auditing Claude skills and commands for quality. Supports Quick Scan (changed skills only) and Full Stocktake modes with sequential subagent batch eval
+springboot-patterns	personal	48	Spring Boot architecture patterns, REST API design, layered services, data access, caching, async processing, and logging. Use for Java Spring Boot backend work
+springboot-security	personal	46	Spring Security best practices for authn/authz, validation, CSRF, secrets, headers, rate limiting, and dependency security in Java Spring Boot services.
+springboot-tdd	personal	46	Test-driven development for Spring Boot using JUnit 5, Mockito, MockMvc, Testcontainers, and JaCoCo. Use when adding features, fixing bugs, or refactoring.
+springboot-verification	personal	44	Verification loop for Spring Boot projects: build, static analysis, tests with coverage, security scans, and diff review before release or PR.
+strategic-compact	personal	41	Suggests manual context compaction at logical intervals to preserve context through task phases rather than arbitrary auto-compaction.
+swift-actor-persistence	personal	41	Thread-safe data persistence in Swift using actors — in-memory cache with file-backed storage, eliminating data races by design.
+swift-concurrency-6-2	personal	48	Swift 6.2 Approachable Concurrency — single-threaded by default, @concurrent for explicit background offloading, isolated conformances for main actor types.
+swift-protocol-di-testing	personal	47	Protocol-based dependency injection for testable Swift code — mock file system, network, and external APIs using focused protocols and Swift Testing.
+swiftui-patterns	personal	48	SwiftUI architecture patterns, state management with @Observable, view composition, navigation, performance optimization, and modern iOS/macOS UI best practices
+tdd-workflow	personal	49	Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with 80%+ coverage including unit, integration, and
+team-builder	personal	22	Interactive agent picker for composing and dispatching parallel teams
+token-budget-advisor	personal	220	Offers the user an informed choice about how much response depth to consume before answering. Use this skill when the user explicitly wants to control response 
+ui-ux-pro-max	personal	245	UI/UX design intelligence for web and mobile. Includes 50+ styles, 161 color palettes, 57 font pairings, 161 product types, 99 UX guidelines, and 25 chart types
+verification-loop	personal	22	A comprehensive verification system for Claude Code sessions.
+video-editing	personal	86	AI-assisted video editing workflows for cutting, structuring, and augmenting real footage. Covers the full pipeline from raw capture through FFmpeg, Remotion, E
+videodb	personal	156	See, Understand, Act on video and audio. See- ingest from local files, URLs, RTSP/live feeds, or live record desktop; return realtime context and playable strea
+visa-doc-translate	personal	36	Translate visa application documents (images) to English and create a bilingual PDF with original and translation
+x-api	personal	64	X/Twitter API integration for posting tweets, threads, reading timelines, search, and analytics. Covers OAuth auth patterns, rate limits, and platform-native co

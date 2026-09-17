@@ -76,11 +76,36 @@ function buildTransport(provider, cfg) {
   };
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Runs tasks with bounded concurrency.
+ *
+ * Firing every batch at once is the obvious implementation and it is wrong:
+ * free-tier Jev rate-limits immediately, so a large skill library fails on the
+ * very first run. Sequential by default costs a few hundred milliseconds and
+ * always works.
+ */
+async function pooled(tasks, limit) {
+  const out = new Array(tasks.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.max(1, Math.min(limit, tasks.length)) }, async () => {
+    while (true) {
+      const i = next++;
+      if (i >= tasks.length) return;
+      out[i] = await tasks[i]();
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
 async function postWithRetry(url, body, headers, { timeoutMs, maxRetries }) {
   let lastErr;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let retryAfterMs = null;
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -96,13 +121,26 @@ async function postWithRetry(url, body, headers, { timeoutMs, maxRetries }) {
       if (res.status >= 400 && res.status < 500 && res.status !== 429) {
         throw new Error(`HTTP ${res.status}: ${text.slice(0, 300)}`);
       }
+      if (res.status === 429) {
+        const hdr = res.headers.get("retry-after");
+        if (hdr) {
+          const secs = Number(hdr);
+          retryAfterMs = Number.isFinite(secs) ? secs * 1000 : Math.max(0, new Date(hdr) - Date.now());
+        }
+      }
       lastErr = new Error(`HTTP ${res.status}: ${text.slice(0, 300)}`);
     } catch (err) {
       clearTimeout(timer);
-      if (/^HTTP 4/.test(err.message)) throw err;
+      if (/^HTTP 4(?!29)/.test(err.message)) throw err;
       lastErr = err.name === "AbortError" ? new Error(`timed out after ${timeoutMs}ms`) : err;
     }
-    if (attempt < maxRetries) await new Promise((r) => setTimeout(r, 2 ** attempt * 400));
+    if (attempt < maxRetries) {
+      // Honour the server's own backoff when it gives one; otherwise exponential
+      // with jitter so parallel callers do not retry in lockstep.
+      const backoff = retryAfterMs ?? 2 ** attempt * 700 + Math.random() * 400;
+      log.debug(`retry ${attempt + 1}/${maxRetries} in ${Math.round(backoff)}ms (${lastErr.message.slice(0, 60)})`);
+      await sleep(Math.min(backoff, 30000));
+    }
   }
   throw lastErr;
 }
@@ -124,15 +162,16 @@ export async function scoreWithJev(skills, state, cfg, provider) {
   log.debug(`jev: ${skills.length} skills in ${batches.length} batch(es) -> ${t.url}`);
 
   const started = Date.now();
-  const results = await Promise.all(
-    batches.map(async (batch) => {
+  const results = await pooled(
+    batches.map((batch) => async () => {
       const { questions, keyToName } = buildQuestions(batch, t.questionType);
       const json = await postWithRetry(t.url, t.body(questions, state), t.headers, {
         timeoutMs: cfg.timeoutMs,
         maxRetries: cfg.maxRetries,
       });
       return { json, keyToName };
-    })
+    }),
+    cfg.concurrency ?? 1
   );
 
   const scores = new Map();

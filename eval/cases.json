@@ -1,0 +1,129 @@
+{
+  "$comment": "Labeled discrimination set. `expected` must rank HIGH, `antiExpected` must rank LOW. Every name is validated against the live inventory before the eval runs, so a typo fails loudly instead of silently inflating a score. Adversarial cases carry no expectations: they test that a vague prompt does not produce confident hiding.",
+  "cases": [
+    {
+      "id": "rust-borrow",
+      "prompt": "My Rust build is failing with a borrow checker error in an async handler and the lifetimes do not line up",
+      "expected": ["rust-patterns", "rust-build", "rust-review", "rust-testing", "rust-test"],
+      "antiExpected": ["carrier-relationship-management", "video-editing", "investor-outreach", "visa-doc-translate"]
+    },
+    {
+      "id": "django-api",
+      "prompt": "Write a Django REST Framework endpoint for user authentication with pytest tests and check it for security holes",
+      "expected": ["django-patterns", "django-tdd", "django-security", "django-verification", "api-design", "python-testing"],
+      "antiExpected": ["video-editing", "energy-procurement", "liquid-glass-design", "frontend-slides"]
+    },
+    {
+      "id": "freight",
+      "prompt": "I need to negotiate freight rates with our carriers and build a performance scorecard for the quarterly review",
+      "expected": ["carrier-relationship-management", "logistics-exception-management", "inventory-demand-planning"],
+      "antiExpected": ["rust-patterns", "swiftui-patterns", "cpp-testing", "shadcn"]
+    },
+    {
+      "id": "pr-review",
+      "prompt": "Review this pull request thoroughly, grill the author on test quality, and check the blast radius before I merge",
+      "expected": ["perform-ai-code-review", "code-review", "security-review", "test-coverage", "onelens"],
+      "antiExpected": ["video-editing", "energy-procurement", "investor-materials", "visa-doc-translate"]
+    },
+    {
+      "id": "video",
+      "prompt": "Edit this footage into a short clip and generate an AI voiceover track for it",
+      "expected": ["video-editing", "videodb", "fal-ai-media"],
+      "antiExpected": ["jpa-patterns", "postgres-patterns", "rust-testing", "customs-trade-compliance"]
+    },
+    {
+      "id": "kmp-compose",
+      "prompt": "Design a Kotlin Multiplatform app using Compose with coroutines and flows, following clean architecture",
+      "expected": ["compose-multiplatform-patterns", "kotlin-coroutines-flows", "kotlin-patterns", "android-clean-architecture", "kotlin-testing", "kotlin-review"],
+      "antiExpected": ["energy-procurement", "perl-patterns", "investor-outreach", "video-editing"]
+    },
+    {
+      "id": "spring-jpa",
+      "prompt": "My Spring Boot service has an N+1 query problem in a JPA repository and the endpoint is timing out",
+      "expected": ["springboot-patterns", "jpa-patterns", "java-coding-standards", "springboot-verification", "postgres-patterns"],
+      "antiExpected": ["video-editing", "frontend-slides", "returns-reverse-logistics", "swiftui-patterns"]
+    },
+    {
+      "id": "swiftui",
+      "prompt": "Build a SwiftUI view with Swift 6 strict concurrency and persist state in an actor",
+      "expected": ["swiftui-patterns", "swift-concurrency-6-2", "swift-actor-persistence", "swift-protocol-di-testing"],
+      "antiExpected": ["django-patterns", "energy-procurement", "carrier-relationship-management", "perl-testing"]
+    },
+    {
+      "id": "postgres",
+      "prompt": "This Postgres query is slow and I need to write a zero-downtime migration to add an index",
+      "expected": ["postgres-patterns", "database-migrations"],
+      "antiExpected": ["video-editing", "frontend-slides", "investor-outreach", "swiftui-patterns"]
+    },
+    {
+      "id": "go-concurrency",
+      "prompt": "I have a goroutine leak and a race condition in my Go service, and the benchmarks regressed",
+      "expected": ["golang-patterns", "golang-pro", "golang-testing", "go-review", "go-test"],
+      "antiExpected": ["laravel-security", "energy-procurement", "video-editing", "investor-materials"]
+    },
+    {
+      "id": "docker-deploy",
+      "prompt": "Containerize this service and set up a CI pipeline with health checks and a rollback strategy",
+      "expected": ["docker-patterns", "deployment-patterns"],
+      "antiExpected": ["video-editing", "customs-trade-compliance", "swiftui-patterns", "investor-outreach"]
+    },
+    {
+      "id": "content",
+      "prompt": "Write a technical blog post about our launch and adapt it for LinkedIn and X",
+      "expected": ["article-writing", "content-engine", "crosspost", "x-api"],
+      "antiExpected": ["jpa-patterns", "cpp-testing", "postgres-patterns", "rust-build"]
+    },
+    {
+      "id": "research",
+      "prompt": "Do deep research on this market with citations from primary sources and give me a report",
+      "expected": ["deep-research", "hyperresearch", "market-research", "exa-search"],
+      "antiExpected": ["jpa-patterns", "docker-patterns", "swiftui-patterns", "cpp-testing"]
+    },
+    {
+      "id": "prd",
+      "prompt": "Turn this feature request into a full product requirements document with user stories and flows",
+      "expected": ["hyperresearch-prd", "hyperresearch-prd-21-personas-stories", "hyperresearch-prd-22-flows-entities"],
+      "antiExpected": ["rust-build", "cpp-testing", "video-editing", "perl-patterns"]
+    },
+    {
+      "id": "laravel-sec",
+      "prompt": "Audit this Laravel app for SQL injection and CSRF issues and add tests for the fixes",
+      "expected": ["laravel-security", "laravel-tdd", "laravel-patterns", "laravel-verification", "security-review"],
+      "antiExpected": ["video-editing", "energy-procurement", "swiftui-patterns", "golang-testing"]
+    },
+    {
+      "id": "cpp-build",
+      "prompt": "My CMake build is failing with a template instantiation error and a linker problem",
+      "expected": ["cpp-build", "cpp-coding-standards", "cpp-testing", "cpp-review"],
+      "antiExpected": ["django-patterns", "carrier-relationship-management", "investor-outreach", "x-api"]
+    },
+    {
+      "id": "energy",
+      "prompt": "We need to optimize our electricity tariffs across facilities and evaluate a renewable PPA",
+      "expected": ["energy-procurement"],
+      "antiExpected": ["rust-patterns", "swiftui-patterns", "shadcn", "cpp-testing"]
+    },
+    {
+      "id": "mcp-server",
+      "prompt": "Build an MCP server that exposes tools to Claude, and check the API docs for the SDK",
+      "expected": ["mcp-server-patterns", "claude-api", "context7-mcp"],
+      "antiExpected": ["energy-procurement", "carrier-relationship-management", "video-editing", "visa-doc-translate"]
+    },
+    {
+      "id": "adversarial-vague-fix",
+      "adversarial": true,
+      "prompt": "fix it",
+      "expected": [],
+      "antiExpected": [],
+      "note": "A prompt with no content must not produce confident hiding. Measured by how much the gate hides, not by ranking."
+    },
+    {
+      "id": "adversarial-vague-faster",
+      "adversarial": true,
+      "prompt": "make this faster",
+      "expected": [],
+      "antiExpected": [],
+      "note": "Ambiguous but weakly directional. Performance-ish skills ranking up is fine; hiding almost everything is not."
+    }
+  ]
+}

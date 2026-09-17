@@ -15,6 +15,7 @@ import {
   writeJsonAtomic,
 } from "../src/settings.mjs";
 import { clearCache } from "../src/cache.mjs";
+import { readStats, recordRun, resetStats, STATS_FILE } from "../src/stats.mjs";
 import { discoverSkills } from "../src/discover.mjs";
 
 const ENTRYPOINT = fileURLToPath(import.meta.url);
@@ -119,6 +120,20 @@ async function cmdApply(args) {
   const settingsPath = resolveSettingsPath(projectDir, args.scope || cfg.scope || "auto");
   const res = applyOverrides(settingsPath, result.plan.overrides, { dryRun: cfg.dryRun });
 
+  if (!cfg.dryRun) {
+    recordRun({
+      provider: result.provider,
+      cached: result.cached,
+      skills: result.plan.stats.total,
+      tokensBefore: result.plan.stats.approxTokensBefore,
+      tokensSaved: result.plan.stats.approxTokensSaved,
+      costUsd: result.costUsd,
+      usage: result.usage || {},
+      projectDir,
+      source: "apply",
+    });
+  }
+
   printPlan(result, { limit: args.all ? 0 : 20 });
   if (res.skippedUserOwned) {
     console.log(`  kept ${res.skippedUserOwned} override(s) you set by hand`);
@@ -157,6 +172,19 @@ async function cmdHook(args) {
       const settingsPath = resolveSettingsPath(projectDir, cfg.scope || "auto");
       const res = applyOverrides(settingsPath, result.plan.overrides, { dryRun: cfg.dryRun });
       const s = result.plan.stats;
+      if (!cfg.dryRun) {
+        recordRun({
+          provider: result.provider,
+          cached: result.cached,
+          skills: s.total,
+          tokensBefore: s.approxTokensBefore,
+          tokensSaved: s.approxTokensSaved,
+          costUsd: result.costUsd,
+          usage: result.usage || {},
+          projectDir,
+          source: "hook",
+        });
+      }
       log.info(
         `${s.on} full / ${s.nameOnly} name-only / ${s.hidden} hidden · ` +
           `~${s.approxTokensSaved} tokens saved · provider=${result.provider}`
@@ -289,6 +317,87 @@ function cmdConfig(args) {
   return 0;
 }
 
+const n = (x) => (x ?? 0).toLocaleString("en-US");
+
+function sinceDays(iso) {
+  if (!iso) return null;
+  return Math.max(1, Math.round((Date.now() - new Date(iso)) / 864e5));
+}
+
+/**
+ * Lifetime savings, spend, and how often gating has actually run.
+ *
+ * Only `apply` and the SessionStart hook record a run; `preview` deliberately
+ * does not, so reading the plan never inflates the numbers.
+ */
+function cmdStats(args) {
+  if (args.reset) {
+    console.log(`reset ${resetStats()}`);
+    return 0;
+  }
+  const s = readStats();
+  if (args.json) {
+    console.log(JSON.stringify(s, null, 2));
+    return 0;
+  }
+
+  const t = s.totals;
+  if (t.runs === 0) {
+    console.log("\nNo gating runs recorded yet.");
+    console.log("Run 'jev-skill-gate apply', or install the hook so every session records one.\n");
+    return 0;
+  }
+
+  const days = sinceDays(s.firstRunAt);
+  const avgSaved = Math.round(t.tokensSaved / t.runs);
+  const avgBefore = Math.round(t.tokensBefore / t.runs);
+  const pctSmaller = t.tokensBefore ? (t.tokensSaved / t.tokensBefore) * 100 : 0;
+  // What the saving actually cost. The interesting figure is not the total
+  // spend but the rate: dollars per million tokens of context reclaimed.
+  const perMillion = t.tokensSaved ? (t.costUsd / t.tokensSaved) * 1e6 : 0;
+
+  console.log("\n  lifetime");
+  console.log(`    triggered      ${n(t.runs)} sessions${days ? `  over ${days} day${days === 1 ? "" : "s"}` : ""}`);
+  console.log(`    tokens saved   ${n(t.tokensSaved)}  ·  avg ${n(avgSaved)} per session`);
+  console.log(`    manifest       ${n(avgBefore)} -> ${n(avgBefore - avgSaved)} avg  (${pctSmaller.toFixed(0)}% smaller)`);
+  console.log(`    spent          $${t.costUsd.toFixed(4)}${t.costUsd > 0 ? `  ·  $${perMillion.toFixed(2)} per 1M tokens saved` : ""}`);
+  if (t.jevRequests) {
+    console.log(`    jev requests   ${n(t.jevRequests)}  ·  ${n(t.jevInputTokens)} input tokens`);
+  }
+  if (t.cachedRuns) {
+    console.log(`    from cache     ${n(t.cachedRuns)} of ${n(t.runs)} runs cost nothing`);
+  }
+
+  const providers = Object.entries(s.byProvider).sort((a, b) => b[1].runs - a[1].runs);
+  if (providers.length) {
+    console.log("\n  by provider");
+    for (const [name, p] of providers) {
+      console.log(
+        `    ${name.padEnd(10)} ${String(p.runs).padStart(5)} runs   ` +
+          `$${p.costUsd.toFixed(4).padStart(8)}   ${n(p.tokensSaved).padStart(10)} saved`
+      );
+    }
+  }
+
+  const limit = args.all ? s.recent.length : 8;
+  if (s.recent.length) {
+    console.log("\n  recent");
+    for (const r of s.recent.slice(0, limit)) {
+      const when = r.at.slice(0, 16).replace("T", " ");
+      const tag = r.cached ? "cached" : r.provider;
+      console.log(
+        `    ${when}  ${String(tag).padEnd(9)} ${String(r.skills).padStart(4)} skills  ` +
+          `${n(r.tokensSaved).padStart(8)} saved  $${(r.costUsd || 0).toFixed(6)}`
+      );
+    }
+    if (s.recent.length > limit) console.log(`    ... ${s.recent.length - limit} more (--all)`);
+  }
+
+  console.log(`\n  ${STATS_FILE}`);
+  console.log("  --json for machine output · --reset to clear\n");
+  return 0;
+}
+
 function cmdDoctor(args) {
   const cfg = cfgFromArgs(args);
   const projectDir = resolve(args.dir || process.cwd());
@@ -320,6 +429,7 @@ jev-skill-gate — gate Claude Code's skill manifest with TypeSafe Jev
   install     register the SessionStart hook in ~/.claude/settings.json
   uninstall   remove the hook and restore your original skillOverrides
   restore     restore skillOverrides without touching the hook
+  stats       lifetime tokens saved, cost, and how often it has run
   config      show or set provider, base URL, API key and model
   doctor      check the setup
   clear-cache drop cached scores
@@ -359,6 +469,7 @@ async function main() {
     restore: () => cmdRestore(),
     doctor: cmdDoctor,
     config: cmdConfig,
+    stats: cmdStats,
     "clear-cache": () => (clearCache(), console.log("cache cleared"), 0),
   };
 

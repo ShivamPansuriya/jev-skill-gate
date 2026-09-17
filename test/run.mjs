@@ -1,3 +1,18 @@
+// Stats and config write under CLAUDE_CONFIG_DIR. Re-exec once into a throwaway
+// directory so a test run can never touch the real ~/.claude state.
+import { mkdtempSync as _mkdtemp } from "node:fs";
+import { tmpdir as _tmpdir } from "node:os";
+import { join as _join } from "node:path";
+if (!process.env.JEV_TEST_SANDBOX) {
+  const { spawnSync } = await import("node:child_process");
+  const sandbox = _mkdtemp(_join(_tmpdir(), "jev-test-home-"));
+  const r = spawnSync(process.execPath, [process.argv[1]], {
+    stdio: "inherit",
+    env: { ...process.env, JEV_TEST_SANDBOX: "1", CLAUDE_CONFIG_DIR: sandbox },
+  });
+  process.exit(r.status ?? 1);
+}
+
 import { strict as assert } from "node:assert";
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -10,6 +25,7 @@ import { readJsonFile, writeJsonAtomic } from "../src/settings.mjs";
 import { DEFAULTS, resolveProvider, maskKey } from "../src/config.mjs";
 import { _internal as jevInternal } from "../src/jev.mjs";
 import { setLogLevel } from "../src/log.mjs";
+import { readStats, recordRun, resetStats } from "../src/stats.mjs";
 
 setLogLevel("silent");
 
@@ -269,6 +285,53 @@ test("maskKey never reveals the middle of a key", () => {
   const masked = maskKey("vck_EXAMPLEnotarealkeyEXAMPLE1234567");
   assert.ok(!masked.includes("notarealkey"));
   assert.equal(maskKey(null), "(unset)");
+});
+
+console.log("\nstats");
+
+test("an empty ledger reports zero, not a crash", () => {
+  resetStats();
+  const s = readStats();
+  assert.equal(s.totals.runs, 0);
+  assert.equal(s.totals.tokensSaved, 0);
+});
+
+test("runs accumulate into lifetime totals", () => {
+  resetStats();
+  recordRun({ provider: "gateway", skills: 217, tokensBefore: 12750, tokensSaved: 9000, costUsd: 0.0009, usage: { inputTokens: 17745, batches: 1 } });
+  recordRun({ provider: "fallback", skills: 217, tokensBefore: 12750, tokensSaved: 8000, costUsd: 0 });
+  const s = readStats();
+  assert.equal(s.totals.runs, 2);
+  assert.equal(s.totals.tokensSaved, 17000);
+  assert.ok(Math.abs(s.totals.costUsd - 0.0009) < 1e-9);
+  assert.equal(s.byProvider.gateway.runs, 1);
+  assert.equal(s.byProvider.fallback.tokensSaved, 8000);
+});
+
+test("a cached run is counted but costs nothing", () => {
+  resetStats();
+  recordRun({ provider: "gateway", cached: true, skills: 217, tokensBefore: 12750, tokensSaved: 9000, costUsd: 0 });
+  const s = readStats();
+  assert.equal(s.totals.runs, 1);
+  assert.equal(s.totals.cachedRuns, 1);
+  assert.equal(s.totals.costUsd, 0);
+  assert.equal(s.totals.tokensSaved, 9000, "cached runs still save tokens");
+});
+
+test("the recent list is trimmed but lifetime totals are not", () => {
+  resetStats();
+  for (let i = 0; i < 60; i++) {
+    recordRun({ provider: "fallback", skills: 10, tokensBefore: 100, tokensSaved: 10, costUsd: 0 });
+  }
+  const s = readStats();
+  assert.equal(s.recent.length, 50, "recent is capped");
+  assert.equal(s.totals.runs, 60, "totals must survive trimming");
+  assert.equal(s.totals.tokensSaved, 600);
+});
+
+test("recording never throws, even on a malformed ledger", () => {
+  resetStats();
+  assert.doesNotThrow(() => recordRun({ provider: "x", skills: NaN, tokensSaved: undefined }));
 });
 
 console.log("\nsettings io");

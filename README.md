@@ -113,6 +113,27 @@ Per skill, the three states cost:
 
 Cost to compute: **one Jev request per session**, 217 questions in a single parallel pass, ~17.7k input tokens, **$0.00074**, cached for 7 days.
 
+### Tracking it over time
+
+Every `apply` and every hook run is recorded, so the savings are measured rather than assumed. `preview` writes nothing, so reading a plan never inflates the numbers.
+
+```
+$ jev-skill-gate stats
+
+  lifetime
+    triggered      3 sessions  over 1 day
+    tokens saved   30,253  ·  avg 10,084 per session
+    manifest       12,750 -> 2,666 avg  (79% smaller)
+    spent          $0.0009  ·  $0.03 per 1M tokens saved
+    jev requests   1  ·  22,332 input tokens
+
+  by provider
+    fallback       2 runs   $  0.0000       18,425 saved
+    gateway        1 runs   $  0.0009       11,828 saved
+```
+
+`$ per 1M tokens saved` is the number that decides whether the API call earns its place. `--json` for machine output, `--all` for the full run log, `--reset` to clear. The ledger lives at `~/.claude/jev-skill-gate/stats.json`; lifetime totals are kept separately from the run log, so trimming the log never loses history.
+
 ## What it actually changes
 
 Claude Code's `skillOverrides` setting has four states. This tool maps a relevance score onto three of them:
@@ -176,6 +197,7 @@ Both transports are supported and the differences are handled for you:
 jev-skill-gate doctor      # check setup, see what was discovered
 jev-skill-gate preview     # score and show the plan, write nothing
 jev-skill-gate apply       # write skillOverrides
+jev-skill-gate stats       # lifetime tokens saved, cost, how often it ran
 jev-skill-gate restore     # put skillOverrides back exactly as it was
 jev-skill-gate uninstall   # remove the hook and restore
 ```

@@ -7,7 +7,8 @@ import { _internal } from "../src/discover.mjs";
 import { planOverrides, STATE_ON, STATE_NAME_ONLY, STATE_HIDDEN } from "../src/gate.mjs";
 import { scoreLocally } from "../src/fallback.mjs";
 import { readJsonFile, writeJsonAtomic } from "../src/settings.mjs";
-import { DEFAULTS } from "../src/config.mjs";
+import { DEFAULTS, resolveProvider, maskKey } from "../src/config.mjs";
+import { _internal as jevInternal } from "../src/jev.mjs";
 import { setLogLevel } from "../src/log.mjs";
 
 setLogLevel("silent");
@@ -27,7 +28,13 @@ function test(name, fn) {
   }
 }
 
-const cfg = (patch = {}) => ({ ...DEFAULTS, ...patch, thresholds: { ...DEFAULTS.thresholds, ...(patch.thresholds || {}) } });
+const cfg = (patch = {}) => ({
+  ...DEFAULTS,
+  ...patch,
+  thresholds: { ...DEFAULTS.thresholds, ...(patch.thresholds || {}) },
+  gateway: { ...DEFAULTS.gateway, ...(patch.gateway || {}) },
+  typesafe: { ...DEFAULTS.typesafe, ...(patch.typesafe || {}) },
+});
 const skill = (name, description = "does a thing", extra = {}) => ({
   name,
   bare: name,
@@ -151,6 +158,96 @@ test("zero term overlap scores zero, not last place", () => {
   const { scores } = scoreLocally(skills, { readme_excerpt: "completely unrelated wording" });
   assert.equal(scores.get("alpha"), 0);
   assert.equal(scores.get("beta"), 0);
+});
+
+console.log("\njev transport");
+
+test("gateway posts to the evaluation-model path with the model in a header", () => {
+  const t = jevInternal.buildTransport({ kind: "gateway", apiKey: "k" }, cfg());
+  assert.equal(t.url, "https://ai-gateway.vercel.sh/v4/ai/evaluation-model");
+  assert.equal(t.headers["ai-model-id"], "typesafe-ai/jev");
+  assert.equal(t.headers["ai-evaluation-model-specification-version"], "4");
+  // The Gateway names the primitive "boolean"; sending "noul" there is rejected.
+  assert.equal(t.questionType, "boolean");
+  assert.equal(t.body({}, "s").model, undefined, "gateway takes the model from the header");
+});
+
+test("typesafe direct posts to /systemone with the model in the body", () => {
+  const t = jevInternal.buildTransport({ kind: "typesafe", apiKey: "k" }, cfg());
+  assert.equal(t.url, "https://api.typesafe.ai/v1/systemone");
+  assert.equal(t.questionType, "noul");
+  assert.equal(t.body({}, "s").model, "jev-latest");
+});
+
+test("a custom baseUrl is honoured and trailing slashes are trimmed", () => {
+  const t = jevInternal.buildTransport(
+    { kind: "gateway", apiKey: "k" },
+    cfg({ gateway: { baseUrl: "https://proxy.internal/", model: "typesafe-ai/jev" } })
+  );
+  assert.equal(t.url, "https://proxy.internal/v4/ai/evaluation-model");
+});
+
+test("reads the probability from either transport's answer shape", () => {
+  assert.equal(jevInternal.readProbability({ noul: 0.93 }), 0.93);
+  assert.equal(jevInternal.readProbability({ probability: 0.99 }), 0.99);
+  assert.equal(jevInternal.readProbability({ choice: "x" }), null);
+  assert.equal(jevInternal.readProbability(undefined), null);
+  assert.equal(jevInternal.readProbability({ probability: 1.4 }), 1, "clamped");
+});
+
+test("every skill gets its own question key and the map inverts", () => {
+  const skills = [skill("a"), skill("b"), skill("c")];
+  const { questions, keyToName } = jevInternal.buildQuestions(skills, "boolean");
+  assert.equal(Object.keys(questions).length, 3);
+  assert.equal(keyToName.get("q0"), "a");
+  // Skill names contain ':' and '-'; opaque keys keep them out of the wire format.
+  assert.ok(Object.keys(questions).every((k) => /^q\d+$/.test(k)));
+});
+
+console.log("\nprovider resolution");
+
+test("env key beats a config-file key", () => {
+  const prev = process.env.AI_GATEWAY_API_KEY;
+  process.env.AI_GATEWAY_API_KEY = "from-env";
+  try {
+    const p = resolveProvider(cfg({ provider: "gateway", gateway: { apiKey: "from-file" } }));
+    assert.equal(p.apiKey, "from-env");
+  } finally {
+    if (prev === undefined) delete process.env.AI_GATEWAY_API_KEY;
+    else process.env.AI_GATEWAY_API_KEY = prev;
+  }
+});
+
+test("a config-file key is used when no env var is set", () => {
+  const prev = process.env.AI_GATEWAY_API_KEY;
+  delete process.env.AI_GATEWAY_API_KEY;
+  try {
+    const p = resolveProvider(cfg({ provider: "gateway", gateway: { apiKey: "from-file" } }));
+    assert.equal(p.kind, "gateway");
+    assert.equal(p.apiKey, "from-file");
+  } finally {
+    if (prev !== undefined) process.env.AI_GATEWAY_API_KEY = prev;
+  }
+});
+
+test("no key anywhere degrades to the local scorer rather than failing", () => {
+  const prev = { g: process.env.AI_GATEWAY_API_KEY, t: process.env.TYPESAFE_API_KEY };
+  delete process.env.AI_GATEWAY_API_KEY;
+  delete process.env.TYPESAFE_API_KEY;
+  try {
+    const p = resolveProvider(cfg({ provider: "gateway" }));
+    assert.equal(p.kind, "fallback");
+    assert.match(p.reason, /Gateway key/);
+  } finally {
+    if (prev.g !== undefined) process.env.AI_GATEWAY_API_KEY = prev.g;
+    if (prev.t !== undefined) process.env.TYPESAFE_API_KEY = prev.t;
+  }
+});
+
+test("maskKey never reveals the middle of a key", () => {
+  const masked = maskKey("vck_EXAMPLEnotarealkeyEXAMPLE1234567");
+  assert.ok(!masked.includes("notarealkey"));
+  assert.equal(maskKey(null), "(unset)");
 });
 
 console.log("\nsettings io");

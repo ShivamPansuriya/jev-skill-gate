@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { fileURLToPath } from "node:url";
+import { chmodSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { loadConfig, resolveProvider, CONFIG_PATH, STATE_DIR } from "../src/config.mjs";
+import { loadConfig, resolveProvider, maskKey, CONFIG_PATH, STATE_DIR } from "../src/config.mjs";
 import { setLogLevel, log } from "../src/log.mjs";
 import { buildPlan, STATE_ON, STATE_NAME_ONLY, STATE_HIDDEN } from "../src/gate.mjs";
 import {
@@ -10,6 +11,8 @@ import {
   resolveSettingsPath,
   installHook,
   uninstallHook,
+  readJsonFile,
+  writeJsonAtomic,
 } from "../src/settings.mjs";
 import { clearCache } from "../src/cache.mjs";
 import { discoverSkills } from "../src/discover.mjs";
@@ -230,6 +233,62 @@ function cmdRestore() {
   return 0;
 }
 
+/**
+ * Shows or edits ~/.claude/jev-skill-gate.json.
+ *
+ * Written 0600 because it can hold an API key. An environment variable still
+ * takes precedence over anything stored here.
+ */
+function cmdConfig(args) {
+  const target = args.provider === "typesafe" ? "typesafe" : "gateway";
+  const writes = {};
+  if (args["base-url"]) writes.baseUrl = args["base-url"];
+  if (args["api-key"]) writes.apiKey = args["api-key"];
+  if (args.model) writes.model = args.model;
+
+  const touchingProvider = args.provider && Object.keys(writes).length === 0;
+
+  if (Object.keys(writes).length > 0 || touchingProvider) {
+    const existing = readJsonFile(CONFIG_PATH, {});
+    if (args.provider) existing.provider = args.provider;
+    if (Object.keys(writes).length > 0) {
+      existing[target] = { ...(existing[target] || {}), ...writes };
+    }
+    writeJsonAtomic(CONFIG_PATH, existing);
+    try {
+      chmodSync(CONFIG_PATH, 0o600);
+    } catch {
+      /* best effort on platforms without POSIX modes */
+    }
+    console.log(`wrote ${CONFIG_PATH}`);
+    if (writes.apiKey) console.log("  mode 0600. an env var still wins over this value.");
+  }
+
+  const cfg = cfgFromArgs(args);
+  const provider = resolveProvider(cfg);
+
+  console.log("\nconfig\n");
+  console.log(`  file          ${CONFIG_PATH}`);
+  console.log(`  provider      ${cfg.provider}  ->  resolved: ${provider.kind}`);
+  if (provider.kind === "fallback" && provider.reason) console.log(`                ${provider.reason}`);
+  console.log("");
+  for (const p of ["gateway", "typesafe"]) {
+    const envKey =
+      p === "gateway"
+        ? process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_KEY
+        : process.env.TYPESAFE_API_KEY || process.env.TYPESAFE_AI_API_KEY;
+    console.log(`  [${p}]`);
+    console.log(`    baseUrl     ${cfg[p].baseUrl}`);
+    console.log(`    model       ${cfg[p].model}`);
+    console.log(`    apiKey      env: ${maskKey(envKey)}   file: ${maskKey(cfg[p].apiKey)}`);
+  }
+  console.log(`\n  thresholds    on >= ${cfg.thresholds.on}   name-only >= ${cfg.thresholds.nameOnly}`);
+  console.log(`  caps          maxOn ${cfg.maxOn}   maxNameOnly ${cfg.maxNameOnly}\n`);
+  console.log("  set values with:");
+  console.log("    jev-skill-gate config --provider gateway --api-key vck_... --base-url https://...\n");
+  return 0;
+}
+
 function cmdDoctor(args) {
   const cfg = cfgFromArgs(args);
   const projectDir = resolve(args.dir || process.cwd());
@@ -261,6 +320,7 @@ jev-skill-gate — gate Claude Code's skill manifest with TypeSafe Jev
   install     register the SessionStart hook in ~/.claude/settings.json
   uninstall   remove the hook and restore your original skillOverrides
   restore     restore skillOverrides without touching the hook
+  config      show or set provider, base URL, API key and model
   doctor      check the setup
   clear-cache drop cached scores
   hook        internal: run as a Claude Code hook
@@ -298,6 +358,7 @@ async function main() {
     uninstall: () => cmdUninstall(),
     restore: () => cmdRestore(),
     doctor: cmdDoctor,
+    config: cmdConfig,
     "clear-cache": () => (clearCache(), console.log("cache cleared"), 0),
   };
 

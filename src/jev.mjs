@@ -2,16 +2,28 @@ import { log } from "./log.mjs";
 
 /**
  * Jev returns one calibrated probability per question, all evaluated in parallel
- * against a single shared read of the state. That is the whole reason this works
- * cheaply: 200 skills is one request, not 200.
+ * against a single shared read of the state. That is why this is cheap: 150
+ * skills is one request, not 150.
  *
- * Request shape (POST {base}/systemone):
- *   { state, model, questions: { <key>: { type: "noul", instructions } } }
- * Response:
- *   { model, answers: { <key>: { type: "noul", noul: 0.93 } }, usage: {...} }
+ * Two transports, verified live against Claude Code v2.1.274 / ai@7.0.105:
+ *
+ * TypeSafe direct
+ *   POST {base}/systemone
+ *   body    { state, model, questions: { k: { type: "noul", instructions } } }
+ *   answer  { answers: { k: { noul: 0.93 } }, usage: { input_tokens } }
+ *
+ * Vercel AI Gateway
+ *   POST {base}/v4/ai/evaluation-model
+ *   header  ai-model-id, ai-evaluation-model-specification-version: 4
+ *   body    { state, questions: { k: { type: "boolean", instructions } } }
+ *   answer  { answers: { k: { probability: 0.99 } }, usage: { inputTokens } }
+ *
+ * The Gateway names the primitive "boolean" and puts the model in a header; the
+ * direct API names it "noul" and puts the model in the body. Same model either
+ * way.
  */
 
-const RELEVANCE_PROMPT =
+const RELEVANCE_CLAIM =
   "This skill is relevant to the work described in the state, and loading its " +
   "instructions would help complete that work.";
 
@@ -21,22 +33,47 @@ function chunk(arr, size) {
   return out;
 }
 
-function buildQuestions(skills) {
+function buildQuestions(skills, questionType) {
   const questions = {};
   const keyToName = new Map();
   skills.forEach((skill, i) => {
     const key = `q${i}`;
     keyToName.set(key, skill.name);
     questions[key] = {
-      type: "noul",
+      type: questionType,
       instructions: {
-        claim: RELEVANCE_PROMPT,
+        claim: RELEVANCE_CLAIM,
         skill_name: skill.name,
         skill_description: skill.description || "(no description provided)",
       },
     };
   });
   return { questions, keyToName };
+}
+
+/** Per-transport request shape. */
+function buildTransport(provider, cfg) {
+  if (provider.kind === "gateway") {
+    const base = (cfg.gateway.baseUrl || "https://ai-gateway.vercel.sh").replace(/\/+$/, "");
+    return {
+      url: `${base}/v4/ai/evaluation-model`,
+      questionType: "boolean",
+      headers: {
+        Authorization: `Bearer ${provider.apiKey}`,
+        "ai-model-id": cfg.gateway.model || "typesafe-ai/jev",
+        "ai-evaluation-model-specification-version": "4",
+        "ai-gateway-protocol-version": "0.0.1",
+      },
+      body: (questions, state) => ({ state, questions, providerOptions: {} }),
+    };
+  }
+  const base = (cfg.typesafe.baseUrl || "https://api.typesafe.ai/v1").replace(/\/+$/, "");
+  return {
+    url: `${base}/systemone`,
+    questionType: "noul",
+    headers: { Authorization: `Bearer ${provider.apiKey}` },
+    body: (questions, state) => ({ state, model: cfg.typesafe.model || "jev-latest", questions }),
+  };
 }
 
 async function postWithRetry(url, body, headers, { timeoutMs, maxRetries }) {
@@ -52,61 +89,48 @@ async function postWithRetry(url, body, headers, { timeoutMs, maxRetries }) {
         signal: controller.signal,
       });
       clearTimeout(timer);
-
       if (res.ok) return await res.json();
 
       const text = await res.text().catch(() => "");
-      // 4xx other than 429 will not get better by trying again.
+      // A 4xx that is not rate limiting will not get better by retrying.
       if (res.status >= 400 && res.status < 500 && res.status !== 429) {
         throw new Error(`HTTP ${res.status}: ${text.slice(0, 300)}`);
       }
       lastErr = new Error(`HTTP ${res.status}: ${text.slice(0, 300)}`);
     } catch (err) {
       clearTimeout(timer);
-      lastErr = err;
-      if (err.name === "AbortError") lastErr = new Error(`timed out after ${timeoutMs}ms`);
-      if (String(err.message).startsWith("HTTP 4")) throw err;
+      if (/^HTTP 4/.test(err.message)) throw err;
+      lastErr = err.name === "AbortError" ? new Error(`timed out after ${timeoutMs}ms`) : err;
     }
-    if (attempt < maxRetries) {
-      await new Promise((r) => setTimeout(r, 2 ** attempt * 400));
-    }
+    if (attempt < maxRetries) await new Promise((r) => setTimeout(r, 2 ** attempt * 400));
   }
   throw lastErr;
 }
 
-function endpointFor(provider, cfg) {
-  if (provider.kind === "gateway") {
-    return {
-      url: `${cfg.gatewayBaseUrl.replace(/\/$/, "")}/systemone`,
-      model: cfg.gatewayModel,
-      headers: { Authorization: `Bearer ${provider.apiKey}` },
-    };
+/** Reads the probability out of either transport's answer shape. */
+function readProbability(answer) {
+  if (!answer || typeof answer !== "object") return null;
+  for (const field of ["noul", "probability"]) {
+    if (typeof answer[field] === "number" && Number.isFinite(answer[field])) {
+      return Math.min(1, Math.max(0, answer[field]));
+    }
   }
-  return {
-    url: `${cfg.typesafeBaseUrl.replace(/\/$/, "")}/systemone`,
-    model: cfg.model,
-    headers: { Authorization: `Bearer ${provider.apiKey}` },
-  };
+  return null;
 }
 
-/**
- * Scores every skill. Resolves to { scores: Map<name, 0..1>, usage, batches }.
- * Throws if the provider is unreachable; callers fall back to the local scorer.
- */
 export async function scoreWithJev(skills, state, cfg, provider) {
-  const { url, model, headers } = endpointFor(provider, cfg);
+  const t = buildTransport(provider, cfg);
   const batches = chunk(skills, cfg.batchSize);
-  log.debug(`jev: ${skills.length} skills in ${batches.length} batch(es) -> ${url}`);
+  log.debug(`jev: ${skills.length} skills in ${batches.length} batch(es) -> ${t.url}`);
 
+  const started = Date.now();
   const results = await Promise.all(
     batches.map(async (batch) => {
-      const { questions, keyToName } = buildQuestions(batch);
-      const json = await postWithRetry(
-        url,
-        { state, model, questions },
-        headers,
-        { timeoutMs: cfg.timeoutMs, maxRetries: cfg.maxRetries }
-      );
+      const { questions, keyToName } = buildQuestions(batch, t.questionType);
+      const json = await postWithRetry(t.url, t.body(questions, state), t.headers, {
+        timeoutMs: cfg.timeoutMs,
+        maxRetries: cfg.maxRetries,
+      });
       return { json, keyToName };
     })
   );
@@ -114,18 +138,19 @@ export async function scoreWithJev(skills, state, cfg, provider) {
   const scores = new Map();
   let inputTokens = 0;
   let outputTokens = 0;
+  let reportedCost = 0;
 
   for (const { json, keyToName } of results) {
     const answers = json?.answers || {};
     for (const [key, name] of keyToName) {
-      const a = answers[key];
-      // `noul` is the documented field; `probability` is what the AI SDK
-      // surfaces for the same primitive through the Gateway.
-      const p = typeof a?.noul === "number" ? a.noul : typeof a?.probability === "number" ? a.probability : null;
-      if (p !== null && Number.isFinite(p)) scores.set(name, Math.min(1, Math.max(0, p)));
+      const p = readProbability(answers[key]);
+      if (p !== null) scores.set(name, p);
     }
-    inputTokens += json?.usage?.input_tokens || 0;
-    outputTokens += json?.usage?.output_tokens || 0;
+    const u = json?.usage || {};
+    inputTokens += u.inputTokens ?? u.input_tokens ?? 0;
+    outputTokens += u.outputTokens ?? u.output_tokens ?? 0;
+    const gw = json?.providerMetadata?.gateway?.cost;
+    if (gw) reportedCost += Number(gw) || 0;
   }
 
   if (scores.size === 0) throw new Error("provider returned no usable answers");
@@ -135,11 +160,14 @@ export async function scoreWithJev(skills, state, cfg, provider) {
 
   return {
     scores,
-    // RLCD optimises probabilities against outcomes, so these are calibrated and
-    // a fixed threshold is a meaningful control surface.
+    // RLCD optimises probability against outcome, so these are calibrated and a
+    // fixed threshold is a meaningful control surface.
     calibrated: true,
     signalStrength: Infinity,
-    usage: { inputTokens, outputTokens, batches: batches.length },
-    costUsd: (inputTokens / 1e6) * 0.042,
+    usage: { inputTokens, outputTokens, batches: batches.length, latencyMs: Date.now() - started },
+    // Prefer the Gateway's own accounting; fall back to list price.
+    costUsd: reportedCost || (inputTokens / 1e6) * 0.042,
   };
 }
+
+export const _internal = { buildTransport, buildQuestions, readProbability };

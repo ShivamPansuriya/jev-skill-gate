@@ -39,11 +39,34 @@ That registers a `SessionStart` hook in `~/.claude/settings.json`, merging into 
 Optionally set a key. Without one it uses a built-in local scorer and still works:
 
 ```bash
-export TYPESAFE_API_KEY=sk-...      # TypeSafe direct
-export AI_GATEWAY_API_KEY=...       # or via Vercel AI Gateway
+export AI_GATEWAY_API_KEY=vck_...   # via Vercel AI Gateway
+export TYPESAFE_API_KEY=sk-...      # or TypeSafe direct
 ```
 
-Keys are read from the environment only. Nothing is written to disk.
+Or store it in the config file, which is written mode 0600:
+
+```bash
+jev-skill-gate config --provider gateway --api-key vck_... 
+jev-skill-gate config --provider gateway --base-url https://my-proxy.internal
+jev-skill-gate config                    # show current settings, keys masked
+```
+
+**An environment variable always wins over the config file.** Env is the better home for a credential: per-shell, easy to rotate, and it cannot end up in a file you commit by accident.
+
+### Providers
+
+Both transports are supported and the differences are handled for you:
+
+| | Vercel AI Gateway | TypeSafe direct |
+|---|---|---|
+| Endpoint | `POST {base}/v4/ai/evaluation-model` | `POST {base}/systemone` |
+| Default base URL | `https://ai-gateway.vercel.sh` | `https://api.typesafe.ai/v1` |
+| Model | `ai-model-id` **header** | `model` in the body |
+| Primitive name | `boolean` | `noul` |
+| Answer field | `probability` | `noul` |
+| Default model | `typesafe-ai/jev` | `jev-latest` |
+
+`--base-url` lets you point either transport at a corporate proxy or a local mock.
 
 ## Use
 

@@ -13,10 +13,19 @@ export const STATE_DIR = join(CLAUDE_DIR, "jev-skill-gate");
  */
 export const DEFAULTS = {
   provider: "auto", // auto | typesafe | gateway | fallback | disabled
-  model: "jev-latest",
-  typesafeBaseUrl: "https://api.typesafe.ai/v1",
-  gatewayBaseUrl: "https://ai-gateway.vercel.sh/v1",
-  gatewayModel: "typesafe-ai/jev",
+
+  // Per-transport endpoint config. apiKey may be set here, but an environment
+  // variable always wins, and env is the better place for it.
+  typesafe: {
+    baseUrl: "https://api.typesafe.ai/v1",
+    model: "jev-latest",
+    apiKey: null,
+  },
+  gateway: {
+    baseUrl: "https://ai-gateway.vercel.sh",
+    model: "typesafe-ai/jev",
+    apiKey: null,
+  },
 
   thresholds: {
     on: 0.6, // full description in context
@@ -80,27 +89,39 @@ export function loadConfig(overrides = {}) {
 }
 
 /**
- * Keys are read from the environment only. Nothing is ever persisted to the
- * config file, so this repo stays safe to commit and share.
+ * Resolves which transport to use and with what key.
+ *
+ * Precedence is environment first, config file second. Env is the better home
+ * for a credential: it is per-shell, easy to rotate, and never ends up in a
+ * file you might commit. The config field exists because not every setup has a
+ * convenient place to export a variable.
  */
 export function resolveProvider(cfg) {
-  const typesafeKey = process.env.TYPESAFE_API_KEY || process.env.TYPESAFE_AI_API_KEY;
-  const gatewayKey = process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_KEY;
+  const typesafeKey =
+    process.env.TYPESAFE_API_KEY || process.env.TYPESAFE_AI_API_KEY || cfg.typesafe?.apiKey || null;
+  const gatewayKey =
+    process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_KEY || cfg.gateway?.apiKey || null;
 
   if (cfg.provider === "disabled") return { kind: "disabled" };
   if (cfg.provider === "fallback") return { kind: "fallback" };
   if (cfg.provider === "typesafe") {
     return typesafeKey
       ? { kind: "typesafe", apiKey: typesafeKey }
-      : { kind: "fallback", reason: "TYPESAFE_API_KEY not set" };
+      : { kind: "fallback", reason: "no TypeSafe key (set TYPESAFE_API_KEY or typesafe.apiKey)" };
   }
   if (cfg.provider === "gateway") {
     return gatewayKey
       ? { kind: "gateway", apiKey: gatewayKey }
-      : { kind: "fallback", reason: "AI_GATEWAY_API_KEY not set" };
+      : { kind: "fallback", reason: "no Gateway key (set AI_GATEWAY_API_KEY or gateway.apiKey)" };
   }
   // auto
   if (typesafeKey) return { kind: "typesafe", apiKey: typesafeKey };
   if (gatewayKey) return { kind: "gateway", apiKey: gatewayKey };
-  return { kind: "fallback", reason: "no TYPESAFE_API_KEY or AI_GATEWAY_API_KEY in environment" };
+  return { kind: "fallback", reason: "no API key found in environment or config" };
+}
+
+/** Masks a key for display. Never print one in full. */
+export function maskKey(key) {
+  if (!key) return "(unset)";
+  return key.length <= 12 ? "****" : `${key.slice(0, 6)}...${key.slice(-4)}`;
 }

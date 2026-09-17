@@ -75,10 +75,19 @@ function printPlan(result, { limit = 0 } = {}) {
   console.log(`  tokens     ${s.approxTokensBefore} -> ${after}  (saved ~${s.approxTokensSaved})`);
   console.log("");
 
+  // The local scorer emits rank-percentiles. Printing 1.00 next to a skill reads
+  // as "certain" when it only means "ranked first", so uncalibrated runs show the
+  // rank instead of a number that invites the wrong reading.
+  const calibrated = s.calibrated !== false;
   const rows = limit > 0 ? plan.decisions.slice(0, limit) : plan.decisions;
+  let rank = 0;
   for (const d of rows) {
-    const score = d.score === null ? "kept" : d.score.toFixed(2);
-    console.log(`  ${BADGE[d.state]} ${score}  ${d.skill.name}`);
+    if (d.score !== null) rank++;
+    const col = d.score === null ? "kept" : calibrated ? d.score.toFixed(2) : `#${rank}`;
+    console.log(`  ${BADGE[d.state]} ${String(col).padStart(5)}  ${d.skill.name}`);
+  }
+  if (!calibrated) {
+    console.log("\n  (local scorer: ranks, not probabilities — set an API key for calibrated scores)");
   }
   if (limit > 0 && plan.decisions.length > limit) {
     console.log(`  ... ${plan.decisions.length - limit} more (--all to show)`);

@@ -37,7 +37,12 @@ export function planOverrides(skills, scores, cfg, meta = {}) {
   // length instead of separation conflates the two, and treats every real
   // prompt as weak.
   const values = [...scores.values()].sort((a, b) => b - a);
-  const separation = values.length > 1 ? values[0] - values[Math.floor(values.length / 2)] : 0;
+  // A scorer that transforms its output (the local one emits rank-percentiles)
+  // must report separation itself, measured on its raw similarities. Deriving it
+  // from the transformed values would measure the transform, not the evidence.
+  const separation =
+    meta.separation ??
+    (values.length > 1 ? values[0] - values[Math.floor(values.length / 2)] : 0);
   const minSeparation = cfg.safety?.minSeparation ?? 0.15;
   const tooShort = (meta.signalStrength ?? Infinity) < (cfg.safety?.minStateTokens ?? 3);
 
@@ -87,6 +92,12 @@ export function planOverrides(skills, scores, cfg, meta = {}) {
 
   candidates.sort((a, b) => b.score - a.score);
 
+  // Caps scale with the library. A flat cap of 40 does nothing on a 54-skill
+  // install - almost everything stays fully visible and the gate saves nothing.
+  const ratio = (n, r, hard) => Math.max(3, Math.min(hard, Math.round(n * r)));
+  const maxOn = ratio(skills.length, cfg.maxOnRatio ?? 0.2, cfg.maxOn);
+  const maxNameOnly = ratio(skills.length, cfg.maxNameOnlyRatio ?? 0.3, cfg.maxNameOnly);
+
   const decided = [];
   let onCount = 0;
   let nameOnlyCount = 0;
@@ -96,10 +107,10 @@ export function planOverrides(skills, scores, cfg, meta = {}) {
     if (calibrated) {
       // Jev's probabilities are calibrated against outcomes, so a threshold is
       // meaningful: 0.6 really is "more likely relevant than not".
-      if (c.score >= cfg.thresholds.on && onCount < cfg.maxOn) {
+      if (c.score >= cfg.thresholds.on && onCount < maxOn) {
         state = STATE_ON;
         onCount++;
-      } else if (c.score >= cfg.thresholds.nameOnly && nameOnlyCount < cfg.maxNameOnly) {
+      } else if (c.score >= cfg.thresholds.nameOnly && nameOnlyCount < maxNameOnly) {
         state = STATE_NAME_ONLY;
         nameOnlyCount++;
       } else {
@@ -109,10 +120,10 @@ export function planOverrides(skills, scores, cfg, meta = {}) {
       // The local scorer emits ranks, not probabilities. Thresholding a rank is
       // meaningless, so take a fixed slice off the top instead, and require some
       // actual term overlap before hiding anything.
-      if (onCount < cfg.maxOn && c.score > 0) {
+      if (onCount < maxOn && c.score > 0) {
         state = STATE_ON;
         onCount++;
-      } else if (nameOnlyCount < cfg.maxNameOnly && c.score > 0) {
+      } else if (nameOnlyCount < maxNameOnly && c.score > 0) {
         state = STATE_NAME_ONLY;
         nameOnlyCount++;
       } else {
@@ -150,6 +161,9 @@ export function planOverrides(skills, scores, cfg, meta = {}) {
       hidden: all.filter((d) => d.state === STATE_HIDDEN).length,
       approxTokensBefore: skills.reduce((n, s) => n + s.approxTokens, 0),
       approxTokensSaved: savedTokens,
+      maxOn,
+      maxNameOnly,
+      calibrated,
     },
   };
 }
@@ -166,7 +180,13 @@ export async function buildPlan(cfg, { projectDir = process.cwd(), prompt = null
   }
 
   const state = withPrompt(collectSignals(projectDir), prompt);
-  const key = cacheKey(skills, state, cfg);
+  const provider = resolveProvider(cfg);
+  if (provider.kind === "disabled") {
+    return { skills, state, plan: null, provider: "disabled", cached: false, costUsd: 0 };
+  }
+  // Keyed on the provider: a cached local-scorer result must not be served to a
+  // run that now has an API key.
+  const key = cacheKey(skills, state, cfg, provider.kind);
 
   if (useCache) {
     const hit = readCache(key, cfg);
@@ -182,13 +202,8 @@ export async function buildPlan(cfg, { projectDir = process.cwd(), prompt = null
     }
   }
 
-  const provider = resolveProvider(cfg);
   let result;
   let providerUsed;
-
-  if (provider.kind === "disabled") {
-    return { skills, state, plan: null, provider: "disabled", cached: false, costUsd: 0 };
-  }
 
   if (provider.kind === "fallback") {
     if (provider.reason) log.info(`using local scorer: ${provider.reason}`);
@@ -209,7 +224,11 @@ export async function buildPlan(cfg, { projectDir = process.cwd(), prompt = null
     }
   }
 
-  const meta = { calibrated: result.calibrated, signalStrength: result.signalStrength };
+  const meta = {
+    calibrated: result.calibrated,
+    separation: result.separation,
+    signalStrength: result.signalStrength,
+  };
   if (useCache) writeCache(key, result.scores, providerUsed, meta);
 
   return {

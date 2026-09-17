@@ -26,6 +26,7 @@ import { DEFAULTS, resolveProvider, maskKey } from "../src/config.mjs";
 import { _internal as jevInternal } from "../src/jev.mjs";
 import { setLogLevel } from "../src/log.mjs";
 import { readStats, recordRun, resetStats } from "../src/stats.mjs";
+import { cacheKey } from "../src/cache.mjs";
 
 setLogLevel("silent");
 
@@ -285,6 +286,53 @@ test("maskKey never reveals the middle of a key", () => {
   const masked = maskKey("vck_EXAMPLEnotarealkeyEXAMPLE1234567");
   assert.ok(!masked.includes("notarealkey"));
   assert.equal(maskKey(null), "(unset)");
+});
+
+console.log("\nregressions from a 54-skill install");
+
+test("separation is judged on raw similarity, not the rank ramp", () => {
+  // Rank-percentiles always run 1.00 -> 0.00, so their top-vs-median gap is ~0.5
+  // whatever the evidence. Identical descriptions are zero evidence and must
+  // still trip the guard.
+  const skills = Array.from({ length: 54 }, (_, i) => skill(`s${i}`, "identical wording for every single skill here"));
+  const r = scoreLocally(skills, { request: "identical wording for every single skill here" });
+  const ramp = [...r.scores.values()].sort((a, b) => b - a);
+  assert.ok(ramp[0] - ramp[27] > 0.4, "the ramp itself always looks well separated");
+  assert.ok(r.separation < 0.15, `raw separation should be tiny, got ${r.separation}`);
+
+  const plan = planOverrides(skills, r.scores, cfg(), {
+    calibrated: false,
+    separation: r.separation,
+    signalStrength: r.signalStrength,
+  });
+  assert.equal(plan.bailedOut, "no-separation");
+  assert.equal(plan.stats.hidden, 0);
+});
+
+test("caps scale down so a small library still gets gated", () => {
+  // A flat cap of 40 left a 54-skill install almost entirely visible.
+  const skills = Array.from({ length: 54 }, (_, i) => skill(`s${i}`));
+  const scores = new Map(skills.map((s, i) => [s.name, 1 - i / 54]));
+  const plan = planOverrides(skills, scores, cfg(), { calibrated: true, separation: 0.5, signalStrength: 999 });
+  assert.ok(plan.stats.maxOn < 40, `maxOn should scale below the hard cap, got ${plan.stats.maxOn}`);
+  assert.ok(plan.stats.on <= 12, `too many left fully visible: ${plan.stats.on}`);
+  const savedPct = plan.stats.approxTokensSaved / plan.stats.approxTokensBefore;
+  assert.ok(savedPct > 0.5, `should save most of the manifest, saved ${(savedPct * 100).toFixed(0)}%`);
+});
+
+test("a large library still uses the hard cap", () => {
+  const skills = Array.from({ length: 217 }, (_, i) => skill(`s${i}`));
+  const scores = new Map(skills.map((s, i) => [s.name, 1 - i / 217]));
+  const plan = planOverrides(skills, scores, cfg(), { calibrated: true, separation: 0.5, signalStrength: 999 });
+  assert.equal(plan.stats.maxOn, 40);
+});
+
+test("cached local scores are never served to a run that has an API key", () => {
+  const skills = [skill("a"), skill("b")];
+  const state = { request: "x" };
+  const k1 = cacheKey(skills, state, cfg(), "fallback");
+  const k2 = cacheKey(skills, state, cfg(), "gateway");
+  assert.notEqual(k1, k2, "provider must be part of the cache key");
 });
 
 console.log("\nstats");

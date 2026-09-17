@@ -88,6 +88,15 @@ export function scoreLocally(skills, state) {
     scores.set(skills[skillIdx].name, raw[skillIdx] > 0 ? pct : 0);
   });
 
+  // The guard must judge the RAW similarities. Rank-percentiles are a uniform
+  // ramp from 1 to 0 by construction, so their top-vs-median gap is always ~0.5
+  // no matter how weak or undifferentiated the underlying evidence was. Judging
+  // separation on them makes the safety net unfireable.
+  const rawSorted = [...raw].sort((a, b) => b - a);
+  const rawTop = rawSorted[0] || 0;
+  const rawMedian = rawSorted[Math.floor(rawSorted.length / 2)] || 0;
+  const separation = rawTop > 0 ? (rawTop - rawMedian) / rawTop : 0;
+
   const matched = raw.filter((v) => v > 0).length;
   log.debug(`local scorer ranked ${skills.length} skills, ${matched} with any term overlap`);
 
@@ -96,6 +105,7 @@ export function scoreLocally(skills, state) {
     // These are ranks, not probabilities. The planner must not read them as
     // calibrated confidence, which is the one thing Jev actually provides.
     calibrated: false,
+    separation,
     signalStrength: stateTokens.length,
     usage: { inputTokens: 0, outputTokens: 0, batches: 0 },
     costUsd: 0,

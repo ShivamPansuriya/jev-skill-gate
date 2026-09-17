@@ -48,6 +48,10 @@ export const DEFAULTS = {
   // They double as the slice sizes for the uncalibrated local scorer.
   maxOn: 40,
   maxNameOnly: 60,
+  // Caps also scale with library size, so a small install still gets gated.
+  // A flat cap of 40 leaves a 54-skill library almost entirely visible.
+  maxOnRatio: 0.2,
+  maxNameOnlyRatio: 0.3,
 
   // Fail-open guards. Hiding a skill is silent, so thin evidence must not
   // produce confident hiding.

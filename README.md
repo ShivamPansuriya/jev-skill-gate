@@ -12,29 +12,62 @@ That is the only question that matters — a gate that saves tokens by hiding wh
 
 **20 labeled cases · 217 installed skills · every label validated against the live inventory before the run.** Each case lists skills that *should* rank high and skills that are unambiguously irrelevant. State is the **prompt only**, with no project signals helping, which is the harder test.
 
-| Metric | Local scorer (free) | Jev (partial run) |
+| Metric | Jev (4 cases) | Local scorer (18 cases) |
 | --- | --- | --- |
-| Mean pairwise AUC | **0.961** | not yet measured across all cases |
-| Cases with perfect separation | 14 / 18 | — |
-| Median rank of an expected skill | **4** of 217 | 1–3 for primary skills |
-| Irrelevant skills reaching any top 10 | **0** | 0 in any top 5 |
-| Expected skills surviving the gate | **92.9%** | — |
-| Skills hidden on a contentless prompt | **0** | — |
+| Mean pairwise AUC | **1.000** | 0.961 |
+| Cases with perfect separation | 4 / 4 | 14 / 18 |
+| Median rank of an expected skill | **3** of 217 | 4 of 217 |
+| Irrelevant skills reaching any top 10 | **0** | **0** |
+| Expected skills surviving the gate | **100%** (19/19) | 92.9% |
+| Skills hidden on a contentless prompt | **0** | **0** |
+
+Different case counts, so these columns are not a head-to-head; the same-case
+comparison is [below](#head-to-head-same-cases).
 
 AUC is the share of (expected, irrelevant) pairs where the expected skill scored higher. 1.0 is perfect, 0.5 is a coin flip.
 
-Full report: **[eval/RESULTS.md](eval/RESULTS.md)** · raw scores: [eval/raw-scores.json](eval/raw-scores.json) · cases: [eval/cases.json](eval/cases.json) · inventory: [eval/skills-inventory.tsv](eval/skills-inventory.tsv)
+Reports: **[eval/RESULTS.md](eval/RESULTS.md)** · **[eval/COMPARISON.md](eval/COMPARISON.md)** · **[eval/JEV-PARTIAL.md](eval/JEV-PARTIAL.md)** · raw scores: [eval/raw-scores.json](eval/raw-scores.json) · cases: [eval/cases.json](eval/cases.json) · inventory: [eval/skills-inventory.tsv](eval/skills-inventory.tsv)
 
 ```bash
 node eval/run-eval.mjs --local --fresh   # free, no key, ~2 seconds
 node eval/run-eval.mjs --reuse           # re-derive every number from committed scores
+node eval/compare.mjs                    # Jev vs local, same cases
+node eval/run-eval.mjs                   # the Jev arm; resumable, needs credits
 ```
 
-### What Jev buys over the free scorer
+### Verdict: does Jev get the right skills?
 
-Jev scored 5 of 6 scenarios before the account's free-tier quota ran out. Those numbers are in **[eval/JEV-PARTIAL.md](eval/JEV-PARTIAL.md)**, and the missing scenario is left blank rather than estimated.
+**Yes, and it hid nothing.** Across the 4 cases scored against live Jev, all 19 labeled skills survived gating:
 
-Where the two differ is instructive. The local TF-IDF scorer hid five labeled skills, **every one at a score of exactly 0.00** — meaning zero literal word overlap:
+```
+19 expected skills · 4 cases
+  14  full description
+   5  name-only  (Claude sees the name, not the description)
+   0  hidden                    ← the number that decides it
+```
+
+| Case | Outcome | Best hit |
+| --- | --- | --- |
+| `django-api` | **6/6 at full description** | `django-patterns` 0.94 (#2 of 217) |
+| `pr-review` | 4 full, 1 name-only | `perform-ai-code-review` 0.97 (#1) |
+| `rust-borrow` | 3 full, 2 name-only | `rust-build` 0.95 (#1) |
+| `freight` | 1 full, 2 name-only | `carrier-relationship-management` 0.96 (#1) |
+
+Irrelevant skills landed at ranks 149–217 with scores of 0.01–0.03. **Pairwise AUC 1.000 on every case** — no labeled skill ever scored below an irrelevant one.
+
+### Head to head, same cases
+
+Restricted to the 4 cases both scorers ran — full report in **[eval/COMPARISON.md](eval/COMPARISON.md)**:
+
+| | Jev | Local TF-IDF |
+| --- | --- | --- |
+| Mean pairwise AUC | **1.000** | 0.948 |
+| Expected skills hidden | **0** | 1 |
+| Cost per session | ~$0.0009 | $0 |
+
+The gap is narrower than it looks, and the local scorer is not embarrassed. On `rust-borrow` and `pr-review` TF-IDF actually ranked the *worst* expected skill higher than Jev did (5 vs 38, and 24 vs 89). Where Jev clearly wins is semantic matching with no shared vocabulary: on the freight prompt it scored `inventory-demand-planning` 0.15 and kept it, while TF-IDF scored it **0.00** and hid it, because the words "freight" and "carrier" appear nowhere in that skill's description.
+
+Over the full 18-case set the local scorer hid 5 labeled skills, all at exactly 0.00:
 
 | Prompt | Skill it hid |
 | --- | --- |
@@ -42,7 +75,21 @@ Where the two differ is instructive. The local TF-IDF scorer hid five labeled sk
 | "Audit this Laravel app for SQL injection" | `security-review` |
 | "Write a blog post and adapt it for LinkedIn and X" | `x-api` |
 
-These are obvious semantic matches with no shared vocabulary. That is precisely the gap a model closes and a bag-of-words cannot. Jev put `security-review` at 0.93 on the Django auth prompt, where TF-IDF scored the same skill 0.00 on a near-identical Laravel one.
+**Honest read:** if your skill descriptions share vocabulary with how you phrase prompts, the free scorer is close enough — run it and skip the key. Jev earns the call when your library has skills whose names and descriptions do not literally overlap the words you type.
+
+### What the data changed in this repo
+
+The eval was not decoration; it moved two shipped defaults.
+
+`nameOnly` was 0.25. Jev scored `rust-test` at **0.22** and `inventory-demand-planning` at **0.15** — both relevant, both would have been silently hidden. The threshold is now **0.15**, and `inventory-demand-planning` survives by a margin of exactly zero. Secondary-but-relevant skills consistently land in 0.15–0.35 while primaries sit at 0.82–0.97, so that band is where the recall is won or lost.
+
+The weak-signal guard originally measured prompt *length*, which made a 10-word Rust prompt look as uninformative as "fix it". It now measures whether scores actually separate. Vague prompts hide **0** skills.
+
+### Known limits of this evidence
+
+- **4 of 20 cases** ran against Jev. The free tier allows roughly 4 requests per refill window; the rest are pending credits. Nothing is estimated to fill the gap.
+- **"Survived" is not "fully visible."** A name-only skill gives Claude the name and no description to judge it by. 5 of 19 landed there.
+- Labels are one person's judgment of what *should* match. On the Django prompt Jev ranked `security-review` #1 at 0.96 — correct, since the prompt says "check it for security holes", and the label was simply incomplete.
 
 ### How much is saved, and how
 

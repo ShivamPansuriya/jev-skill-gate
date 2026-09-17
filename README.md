@@ -29,7 +29,7 @@ Claude Code's `skillOverrides` setting has four states. This tool maps a relevan
 Requires Node 18+. No dependencies.
 
 ```bash
-git clone https://github.com/<you>/jev-skill-gate.git
+git clone https://github.com/ShivamPansuriya/jev-skill-gate.git
 cd jev-skill-gate
 node bin/jev-skill-gate.mjs install
 ```

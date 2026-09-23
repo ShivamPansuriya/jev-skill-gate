@@ -26,6 +26,7 @@ import { DEFAULTS, loadConfig, maskKey, CONFIG_PATH } from "../src/config.mjs";
 import { scoreWithProvider } from "../src/runner.mjs";
 import { defineProvider } from "../src/providers/spec.mjs";
 import { extractJson } from "../src/providers/subprocess.mjs";
+import { isLocalUrl } from "../src/http.mjs";
 import {
   resolveProvider,
   loadProviders,
@@ -421,6 +422,37 @@ await test("a per-provider calibrated override reaches the planner", async () =>
     }
   );
   assert.equal(result.calibrated, true);
+});
+
+test("a hosted provider pointed at a local server is not billed list price", async () => {
+  // stuntd and any other local Jev-compatible proxy are reached by setting the
+  // hosted provider's base URL to localhost. The protocol is the same; the
+  // price is not, and charging $0.042/1M for it would inflate lifetime spend
+  // with money nobody paid.
+  const skills = [skill("a"), skill("b")];
+  const result = await withFakeOpenJev(
+    (_req, body) => ({ json: { answers: noulFor(body.questions, () => 0.5), usage: { input_tokens: 5000 } } }),
+    (baseUrl) => {
+      const c = cfg({ providers: { typesafe: { baseUrl: `${baseUrl}/v1` } } });
+      return scoreWithProvider(skills, { prompt: "x" }, c, {
+        id: "typesafe",
+        provider: typesafeProvider,
+        conf: providerConfig(c, typesafeProvider),
+        apiKey: "local",
+      });
+    }
+  );
+  assert.equal(result.usage.inputTokens, 5000);
+  assert.equal(result.costUsd, 0, "a localhost endpoint is free");
+});
+
+test("loopback addresses are recognised, public ones are not", () => {
+  for (const u of ["http://127.0.0.1:8787/v1/systemone", "http://localhost:8791/x", "http://127.5.0.1/y"]) {
+    assert.equal(isLocalUrl(u), true, u);
+  }
+  for (const u of ["https://api.typesafe.ai/v1/systemone", "https://ai-gateway.vercel.sh/x", "not a url"]) {
+    assert.equal(isLocalUrl(u), false, u);
+  }
 });
 
 console.log("\nlocal subprocess providers");

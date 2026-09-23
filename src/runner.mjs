@@ -1,5 +1,5 @@
 import { log } from "./log.mjs";
-import { postJson, HttpError } from "./http.mjs";
+import { postJson, HttpError, isLocalUrl } from "./http.mjs";
 
 /**
  * The provider-agnostic scoring runner.
@@ -78,6 +78,17 @@ function countStateTokens(state) {
   return (text.match(/[a-z0-9_-]+/gi) || []).length;
 }
 
+/**
+ * What one million input tokens costs on this run. An explicit per-provider
+ * setting wins; otherwise a local endpoint is free and anything else pays the
+ * provider's published rate.
+ */
+function ratePerMillion(provider, conf, endpoint) {
+  if (typeof conf.costPerMillionInputUsd === "number") return conf.costPerMillionInputUsd;
+  if (endpoint && isLocalUrl(endpoint)) return 0;
+  return provider.costPerMillionInputUsd || 0;
+}
+
 /** One question per skill, with a stable key the provider echoes back. */
 function buildQuestions(skills) {
   return skills.map((skill, i) => ({
@@ -114,9 +125,11 @@ export async function scoreWithProvider(skills, state, cfg, resolved) {
   const started = Date.now();
   log.debug(`${provider.id}: ${skills.length} skills in ${batches.length} batch(es)`);
 
+  let endpoint = null;
   const results = await pooled(
     batches.map((questions) => async () => {
       const { url, headers, body } = provider.request({ questions, state, cfg, conf, apiKey });
+      endpoint = url;
       const json = await postWithRetry(url, body, headers || {}, {
         timeoutMs: conf.timeoutMs || cfg.timeoutMs,
         maxRetries: cfg.maxRetries,
@@ -161,8 +174,9 @@ export async function scoreWithProvider(skills, state, cfg, resolved) {
     // a near-empty state can still produce a confident-looking ordering.
     signalStrength: calibrated ? Infinity : countStateTokens(state),
     usage: { inputTokens, outputTokens, batches: batches.length, latencyMs: Date.now() - started },
-    // Prefer a provider's own billing figure over list price.
-    costUsd: reportedCost || (inputTokens / 1e6) * (provider.costPerMillionInputUsd || 0),
+    // Prefer a provider's own billing figure over list price, and never charge
+    // list price for a server running on this machine.
+    costUsd: reportedCost || (inputTokens / 1e6) * ratePerMillion(provider, conf, endpoint),
   };
 }
 

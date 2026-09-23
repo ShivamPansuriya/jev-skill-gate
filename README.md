@@ -260,6 +260,20 @@ jev-skill-gate config --for laya-mlx --set device=gpu
 jev-skill-gate config --for laya-mlx --set command=uv --set args='["run","laya-mlx"]'
 ```
 
+#### stuntd, and anything else that speaks the Jev protocol
+
+[stuntd](https://github.com/bladedevoff/stuntd) serves `POST /v1/systemone` locally from the Laya checkpoint. It needs no provider here at all — point the `typesafe` provider at it:
+
+```bash
+stuntd serve                       # listens on 127.0.0.1:8787
+jev-skill-gate config --provider typesafe --base-url http://127.0.0.1:8787/v1
+TYPESAFE_API_KEY=local jev-skill-gate preview
+```
+
+Verified working against stuntd v0.1 with no code changes. A run against a loopback address is reported as costing nothing, whatever the provider's published rate, so a local proxy never inflates `jev-skill-gate stats`.
+
+The same trick covers a corporate proxy in front of hosted Jev, or a mock in a test.
+
 #### Adding your own
 
 A provider is one file. Drop it in `~/.claude/jev-skill-gate/providers/` and it is selectable immediately — no edit to this repo, no registry to append to.

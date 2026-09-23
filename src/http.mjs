@@ -17,6 +17,29 @@ import { request as httpsRequest } from "node:https";
  * That is the whole reason this module exists.
  */
 
+/**
+ * True for a URL served by this machine.
+ *
+ * Used to decide that a request was free. A provider's price is a property of
+ * the hosted service, not of its wire protocol, and the two come apart the
+ * moment someone points a hosted provider's base URL at a local server - a
+ * proxy like stuntd, or a mock. Billing list price for those would quietly
+ * inflate lifetime cost with money nobody spent.
+ */
+export function isLocalUrl(url) {
+  try {
+    const { hostname } = new URL(url);
+    return (
+      hostname === "localhost" ||
+      hostname === "::1" ||
+      hostname.endsWith(".localhost") ||
+      /^127\./.test(hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Thrown for a non-2xx reply, carrying the status so callers can decide. */
 export class HttpError extends Error {
   constructor(status, body) {

@@ -16,7 +16,7 @@ Two machines:
 | `laya` | `convaiinnovations/laya`, 421M | yes, full 217-skill library | Linux, CPU |
 | `laya-mlx` | `convaiinnovations/laya` via MLX | yes | macOS, Apple Silicon GPU |
 
-The test suite (65 cases) passes on both machines.
+The test suite (69 cases) passes on both machines.
 
 ## open-jev
 
@@ -152,6 +152,35 @@ The fake local runtime used by `a local process provider is driven end to end`
 had a `#!/usr/bin/env node` shebang. The Mac had a perfectly good Node that was
 not on `PATH`, so the test failed for a reason unrelated to the code. It now
 uses `process.execPath`.
+
+## stuntd
+
+[stuntd](https://github.com/bladedevoff/stuntd) v0.1 serves the Jev protocol
+locally from the Laya checkpoint. Raised in issue #1; tested rather than taken
+on trust.
+
+```bash
+pip install "stuntd[train]" && stuntd serve
+jev-skill-gate config --provider typesafe --base-url http://127.0.0.1:8787/v1
+```
+
+Works with the existing `typesafe` provider, no code change:
+
+```
+[jev-skill-gate] typesafe: 3 skills in 1 batch(es)
+[jev-skill-gate] typesafe scored 3 skills, 1536 input tokens, $0.000000
+[jev-skill-gate] warn: scores do not separate (top 0.63 vs median 0.60); leaving every skill visible
+```
+
+It found one bug: the run was first reported as costing $0.000065, because the
+`typesafe` provider's published rate was applied to a server on localhost. A
+price belongs to a hosted service, not to a wire protocol, and the two come
+apart the moment a base URL is repointed. A loopback endpoint is now free, and
+`providers.<id>.costPerMillionInputUsd` overrides the rate for anything else.
+
+The separation above is zero-shot Laya, which stuntd's own README is candid
+about (38.2 against Jev's 76.4 on banking77's 77 intents). Its answer is to
+train a head on your own traffic; that is unmeasured here.
 
 ## Not verified
 

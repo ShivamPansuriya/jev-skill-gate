@@ -184,7 +184,36 @@ jev-skill-gate config                    # show current settings, keys masked
 
 ### Providers
 
-Both transports are supported and the differences are handled for you:
+Scoring is pluggable. Hosted Jev is the most accurate option; three open models run entirely on your own machine for nothing; and the local TF-IDF scorer needs no setup at all.
+
+```bash
+jev-skill-gate providers      # what is available and which one is selected
+```
+
+| id | What it is | Needs | Calibrated |
+|---|---|---|---|
+| `gateway` | TypeSafe Jev via Vercel AI Gateway | API key | yes |
+| `typesafe` | TypeSafe Jev, called directly | API key | yes |
+| `open-jev` | [Open-Jev](https://github.com/Zefan-Cai/Open-Jev), self-hosted HTTP server | a GPU for a large library | no |
+| `laya` | [laya](https://github.com/NandhaKishorM/laya), 421M local Python model | `pip install laya` | no |
+| `laya-mlx` | [laya-mlx](https://github.com/mizorewww/laya-mlx), MLX port | Apple Silicon | no |
+| `fallback` | TF-IDF over names and descriptions | nothing | no |
+
+All three were run for real — against the released Open-Jev-2B weights, against
+`laya` on a full 217-skill library, and against `laya-mlx` on an Apple Silicon
+Mac. The measurements, and the seven bugs those runs found, are in
+[eval/LOCAL-PROVIDERS.md](eval/LOCAL-PROVIDERS.md).
+
+**Calibrated matters.** A calibrated provider's 0.72 means the same thing on every prompt, so the `on: 0.6` threshold is a real control. An uncalibrated one only *ranks* skills, so the planner ignores thresholds for it and slices the top N instead. Getting this wrong hides skills silently, so every provider declares it and the default is `false`. If you measure your own reliability curve, override it per provider with `--set calibrated=true`.
+
+#### Hosted Jev
+
+```bash
+export AI_GATEWAY_API_KEY=...        # or TYPESAFE_API_KEY
+jev-skill-gate preview
+```
+
+`auto` picks whichever hosted provider has a key.
 
 | | Vercel AI Gateway | TypeSafe direct |
 |---|---|---|
@@ -195,7 +224,63 @@ Both transports are supported and the differences are handled for you:
 | Answer field | `probability` | `noul` |
 | Default model | `typesafe-ai/jev` | `jev-latest` |
 
-`--base-url` lets you point either transport at a corporate proxy or a local mock.
+#### Open-Jev (self-hosted server)
+
+The only one of the three open models that ships a server, so it is the one to reach for first. The model stays resident between calls.
+
+```bash
+python -m jev.server --checkpoint models/Open-Jev-2B/package/checkpoint --device cuda:0
+jev-skill-gate config --provider open-jev            # defaults to http://127.0.0.1:8791
+jev-skill-gate preview --prompt "fix my cargo build"
+```
+
+It takes the same `{state, questions}` body as hosted Jev. Batches are 16 skills, not 250, because each question is an independent forward pass rather than one parallel read.
+
+**Throughput is the real constraint.** Measured on the released 2B checkpoint on CPU: about 4.5s per question on a short state, around 20s per question at a full project state. That makes a 217-skill library over an hour on CPU, so use a GPU for a library that size. On a small library, or on a GPU, it is comfortable.
+
+No authentication: it binds to localhost and rejects cross-origin requests. Point `--base-url` at a reverse proxy if it needs to leave the machine, and set `--api-key` if that proxy wants one.
+
+#### laya and laya-mlx (local process)
+
+Neither ships a server — `laya` is a Python library, `laya-mlx` a one-shot CLI — so these providers run them as a subprocess and read JSON back. That means a model load per invocation, seconds rather than milliseconds on a 421M checkpoint. Tolerable because the gate runs once per session and caches for a week; if it is not, run Open-Jev instead.
+
+```bash
+pip install laya
+jev-skill-gate config --provider laya
+jev-skill-gate config --for laya --set python=/usr/bin/python3.11     # if python3 is not the right one
+```
+
+Measured on CPU: a 69 second model load, then about 0.48s per question at a flat 2.9GB. The full 217-skill library took 13m13s and cut 12,750 tokens to 2,087.
+
+`laya-mlx` needs Apple Silicon and macOS 14+:
+
+```bash
+jev-skill-gate config --provider laya-mlx
+jev-skill-gate config --for laya-mlx --set device=gpu
+jev-skill-gate config --for laya-mlx --set command=uv --set args='["run","laya-mlx"]'
+```
+
+#### Adding your own
+
+A provider is one file. Drop it in `~/.claude/jev-skill-gate/providers/` and it is selectable immediately — no edit to this repo, no registry to append to.
+
+```bash
+cp examples/providers/ollama.mjs ~/.claude/jev-skill-gate/providers/
+jev-skill-gate config --provider ollama
+```
+
+The contract is in [`src/providers/spec.mjs`](src/providers/spec.mjs). The short version: declare `calibrated`, then implement **either** one HTTP request shape
+
+```js
+request({ questions, state, cfg, conf, apiKey }) -> { url, headers, body }
+readAnswers(json, questions) -> Map<questionKey, probability>
+```
+
+— batching, retries, `Retry-After`, backoff and usage accounting are handled for you — **or** `score()` and own the whole flow, which is what the two `laya` providers do to drive a subprocess.
+
+A plugin that throws at load time is reported and skipped. A provider that fails at run time degrades to the local scorer, so a dead key or an unreachable server can never leave a session with no skills.
+
+`examples/providers/ollama.mjs` is a worked example against any Ollama chat model. It demonstrates the interface; it is not a recommendation, and the file says why.
 
 ## Use
 
@@ -247,7 +332,12 @@ Optional, at `~/.claude/jev-skill-gate.json`:
 
 ```json
 {
-  "thresholds": { "on": 0.6, "nameOnly": 0.25 },
+  "provider": "open-jev",
+  "providers": {
+    "open-jev": { "baseUrl": "http://127.0.0.1:8791" },
+    "gateway": { "model": "typesafe-ai/jev" }
+  },
+  "thresholds": { "on": 0.6, "nameOnly": 0.15 },
   "maxOn": 40,
   "maxNameOnly": 60,
   "alwaysOn": ["my-critical-skill"],
@@ -256,6 +346,9 @@ Optional, at `~/.claude/jev-skill-gate.json`:
   "cacheTtlHours": 168
 }
 ```
+
+- `provider` — any id from `jev-skill-gate providers`, or `auto` (first hosted provider with a key) or `disabled`.
+- `providers` — per-provider settings, merged over that provider's own defaults. An environment variable always beats an `apiKey` stored here, and the file is written `0600`.
 
 - `alwaysOn` — kept at full visibility whatever the score.
 - `ignore` — no override written at all.

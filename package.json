@@ -1,6 +1,6 @@
 {
   "name": "jev-skill-gate",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Gate Claude Code's skill manifest with TypeSafe Jev. Only relevant skills reach the context window.",
   "type": "module",
   "bin": {

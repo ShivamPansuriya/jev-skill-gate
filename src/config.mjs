@@ -1,10 +1,7 @@
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { readFileSync, existsSync } from "node:fs";
+import { CLAUDE_DIR, CONFIG_PATH, STATE_DIR } from "./paths.mjs";
 
-export const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
-export const CONFIG_PATH = join(CLAUDE_DIR, "jev-skill-gate.json");
-export const STATE_DIR = join(CLAUDE_DIR, "jev-skill-gate");
+export { CLAUDE_DIR, CONFIG_PATH, STATE_DIR };
 
 /**
  * Thresholds map a relevance probability onto Claude Code's four skillOverrides
@@ -12,20 +9,22 @@ export const STATE_DIR = join(CLAUDE_DIR, "jev-skill-gate");
  * slash menu too, so a wrong call would cost them access rather than tokens.
  */
 export const DEFAULTS = {
-  provider: "auto", // auto | typesafe | gateway | fallback | disabled
+  // "auto" picks the first hosted provider that has a key, else the local
+  // scorer. Any provider id works here - run `jev-skill-gate providers` for the
+  // list, which includes anything you dropped in the plugin directory.
+  // "disabled" turns gating off entirely.
+  provider: "auto",
 
-  // Per-transport endpoint config. apiKey may be set here, but an environment
-  // variable always wins, and env is the better place for it.
-  typesafe: {
-    baseUrl: "https://api.typesafe.ai/v1",
-    model: "jev-latest",
-    apiKey: null,
-  },
-  gateway: {
-    baseUrl: "https://ai-gateway.vercel.sh",
-    model: "typesafe-ai/jev",
-    apiKey: null,
-  },
+  // Per-provider settings, keyed by provider id. Each provider supplies its own
+  // defaults (base URL, model, and so on); anything set here overrides them.
+  // apiKey may live here, but an environment variable always wins, and env is
+  // the better place for it.
+  //
+  //   "providers": {
+  //     "open-jev": { "baseUrl": "http://127.0.0.1:8791" },
+  //     "laya-mlx": { "model": "convaiinnovations/laya" }
+  //   }
+  providers: {},
 
   // Tuned against eval/RESULTS.md and eval/JEV-PARTIAL.md rather than guessed.
   //
@@ -96,6 +95,25 @@ function deepMerge(base, patch) {
   return out;
 }
 
+/**
+ * Before providers were pluggable there were exactly two, configured as
+ * top-level `typesafe` and `gateway` objects. Those keys are folded into
+ * `providers` here so that an existing config keeps working untouched, and the
+ * old keys lose to the new ones if somehow both are present.
+ *
+ * `migrate` rewrites the file properly during an update. This shim is what
+ * makes that rewrite optional rather than urgent.
+ */
+function liftLegacyProviders(cfg) {
+  const legacy = ["typesafe", "gateway"].filter((id) => cfg[id] && typeof cfg[id] === "object");
+  if (legacy.length === 0) return cfg;
+  const providers = { ...cfg.providers };
+  for (const id of legacy) providers[id] = { ...cfg[id], ...(providers[id] || {}) };
+  const out = { ...cfg, providers };
+  for (const id of legacy) delete out[id];
+  return out;
+}
+
 export function loadConfig(overrides = {}) {
   let fileCfg = {};
   if (existsSync(CONFIG_PATH)) {
@@ -105,7 +123,7 @@ export function loadConfig(overrides = {}) {
       process.stderr.write(`[jev-skill-gate] ignoring malformed ${CONFIG_PATH}: ${err.message}\n`);
     }
   }
-  const cfg = deepMerge(deepMerge(DEFAULTS, fileCfg), overrides);
+  const cfg = liftLegacyProviders(deepMerge(deepMerge(DEFAULTS, fileCfg), overrides));
 
   if (process.env.JEV_SKILL_GATE_DRY_RUN === "1") cfg.dryRun = true;
   if (process.env.JEV_SKILL_GATE_LOG) cfg.logLevel = process.env.JEV_SKILL_GATE_LOG;
@@ -115,36 +133,10 @@ export function loadConfig(overrides = {}) {
 }
 
 /**
- * Resolves which transport to use and with what key.
- *
- * Precedence is environment first, config file second. Env is the better home
- * for a credential: it is per-shell, easy to rotate, and never ends up in a
- * file you might commit. The config field exists because not every setup has a
- * convenient place to export a variable.
+ * Choosing a provider now belongs to the registry, which is the only thing that
+ * knows what providers exist. Re-exported here so callers keep one import.
  */
-export function resolveProvider(cfg) {
-  const typesafeKey =
-    process.env.TYPESAFE_API_KEY || process.env.TYPESAFE_AI_API_KEY || cfg.typesafe?.apiKey || null;
-  const gatewayKey =
-    process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_KEY || cfg.gateway?.apiKey || null;
-
-  if (cfg.provider === "disabled") return { kind: "disabled" };
-  if (cfg.provider === "fallback") return { kind: "fallback" };
-  if (cfg.provider === "typesafe") {
-    return typesafeKey
-      ? { kind: "typesafe", apiKey: typesafeKey }
-      : { kind: "fallback", reason: "no TypeSafe key (set TYPESAFE_API_KEY or typesafe.apiKey)" };
-  }
-  if (cfg.provider === "gateway") {
-    return gatewayKey
-      ? { kind: "gateway", apiKey: gatewayKey }
-      : { kind: "fallback", reason: "no Gateway key (set AI_GATEWAY_API_KEY or gateway.apiKey)" };
-  }
-  // auto
-  if (typesafeKey) return { kind: "typesafe", apiKey: typesafeKey };
-  if (gatewayKey) return { kind: "gateway", apiKey: gatewayKey };
-  return { kind: "fallback", reason: "no API key found in environment or config" };
-}
+export { resolveProvider, loadProviders, providerConfig, providerKey } from "./providers/index.mjs";
 
 /** Masks a key for display. Never print one in full. */
 export function maskKey(key) {

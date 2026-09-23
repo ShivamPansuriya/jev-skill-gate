@@ -1,9 +1,9 @@
 import { discoverSkills } from "./discover.mjs";
 import { collectSignals, withPrompt } from "./signals.mjs";
-import { scoreWithJev } from "./jev.mjs";
+import { scoreWithProvider } from "./runner.mjs";
 import { scoreLocally } from "./fallback.mjs";
 import { cacheKey, readCache, writeCache } from "./cache.mjs";
-import { resolveProvider } from "./config.mjs";
+import { resolveProvider, FALLBACK_ID } from "./providers/index.mjs";
 import { log } from "./log.mjs";
 
 export const STATE_ON = "on";
@@ -180,13 +180,14 @@ export async function buildPlan(cfg, { projectDir = process.cwd(), prompt = null
   }
 
   const state = withPrompt(collectSignals(projectDir), prompt);
-  const provider = resolveProvider(cfg);
-  if (provider.kind === "disabled") {
+  const resolved = await resolveProvider(cfg);
+  if (resolved.id === "disabled") {
     return { skills, state, plan: null, provider: "disabled", cached: false, costUsd: 0 };
   }
   // Keyed on the provider: a cached local-scorer result must not be served to a
-  // run that now has an API key.
-  const key = cacheKey(skills, state, cfg, provider.kind);
+  // run that now has an API key, and a hosted result must not be served to one
+  // that switched to a local model.
+  const key = cacheKey(skills, state, cfg, resolved.id);
 
   if (useCache) {
     const hit = readCache(key, cfg);
@@ -205,22 +206,25 @@ export async function buildPlan(cfg, { projectDir = process.cwd(), prompt = null
   let result;
   let providerUsed;
 
-  if (provider.kind === "fallback") {
-    if (provider.reason) log.info(`using local scorer: ${provider.reason}`);
+  if (resolved.id === FALLBACK_ID) {
+    if (resolved.reason) log.info(`using local scorer: ${resolved.reason}`);
     result = scoreLocally(skills, state);
-    providerUsed = "fallback";
+    providerUsed = FALLBACK_ID;
   } else {
     try {
-      result = await scoreWithJev(skills, state, cfg, provider);
-      providerUsed = provider.kind;
+      result = await scoreWithProvider(skills, state, cfg, resolved);
+      providerUsed = resolved.id;
       log.debug(
-        `jev scored ${result.scores.size} skills, ${result.usage.inputTokens} input tokens, ` +
-          `$${result.costUsd.toFixed(6)}`
+        `${resolved.id} scored ${result.scores.size} skills, ${result.usage.inputTokens} input tokens, ` +
+          `$${(result.costUsd || 0).toFixed(6)}`
       );
     } catch (err) {
-      log.warn(`${provider.kind} unavailable (${err.message}); falling back to local scorer`);
+      // Degrading is always right here. A dead key, an unreachable local server
+      // or a model that will not load must never leave a session with no
+      // skills at all.
+      log.warn(`${resolved.id} unavailable (${err.message}); falling back to local scorer`);
       result = scoreLocally(skills, state);
-      providerUsed = "fallback";
+      providerUsed = FALLBACK_ID;
     }
   }
 

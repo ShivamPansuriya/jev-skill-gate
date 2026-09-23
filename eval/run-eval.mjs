@@ -21,9 +21,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { discoverSkills } from "../src/discover.mjs";
-import { scoreWithJev } from "../src/jev.mjs";
+import { scoreWithProvider } from "../src/runner.mjs";
 import { scoreLocally } from "../src/fallback.mjs";
-import { loadConfig, resolveProvider } from "../src/config.mjs";
+import { loadConfig } from "../src/config.mjs";
+import { resolveProvider, FALLBACK_ID } from "../src/providers/index.mjs";
 import { planOverrides } from "../src/gate.mjs";
 import { setLogLevel } from "../src/log.mjs";
 
@@ -63,11 +64,11 @@ console.log(`labels ok: ${cases.length} cases against ${skills.length} installed
 async function scoreCase(c) {
   const state = { request: c.prompt };
   if (USE_LOCAL) return scoreLocally(skills, state);
-  const provider = resolveProvider(cfg);
-  if (provider.kind === "fallback") {
+  const provider = await resolveProvider(cfg);
+  if (provider.id === FALLBACK_ID) {
     throw new Error(`no API key: ${provider.reason}. Use --local to eval the fallback scorer.`);
   }
-  return scoreWithJev(skills, state, cfg, provider);
+  return scoreWithProvider(skills, state, cfg, provider);
 }
 
 let raw;
@@ -109,7 +110,7 @@ if (REUSE && existsSync(RAW_PATH)) {
       console.log("re-run the same command to resume, or --reuse to report on what is there.");
       process.exit(2);
     }
-    raw.provider = USE_LOCAL ? "fallback" : resolveProvider(cfg).kind;
+    raw.provider = USE_LOCAL ? FALLBACK_ID : (await resolveProvider(cfg)).id;
     raw.cases[c.id] = {
       scores: Object.fromEntries(r.scores),
       usage: r.usage,

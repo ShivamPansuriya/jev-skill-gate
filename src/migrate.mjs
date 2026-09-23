@@ -1,6 +1,6 @@
 import { join } from "node:path";
-import { mkdirSync, existsSync, unlinkSync } from "node:fs";
-import { STATE_DIR } from "./config.mjs";
+import { mkdirSync, existsSync, unlinkSync, chmodSync } from "node:fs";
+import { STATE_DIR, CONFIG_PATH } from "./paths.mjs";
 import { readJsonFile, writeJsonAtomic } from "./settings.mjs";
 import { log } from "./log.mjs";
 
@@ -9,7 +9,7 @@ const VERSION_PATH = join(STATE_DIR, "state-version.json");
 /**
  * Bump when an on-disk format changes, and add the matching step below.
  */
-export const STATE_VERSION = 2;
+export const STATE_VERSION = 3;
 
 /**
  * Each migration takes the state directory and makes it valid for the next
@@ -33,14 +33,51 @@ const MIGRATIONS = {
     }
     return "no cache to clear";
   },
+
+  // v2 -> v3: providers became plugins, so their settings moved from top-level
+  // `typesafe` / `gateway` keys into a `providers` map.
+  //
+  // loadConfig folds the old keys in at read time regardless, so this rewrite
+  // is tidiness rather than a fix - which is exactly why it is safe to do here.
+  // It only ever moves keys that already exist, and a key already present in
+  // the new location wins, so running it twice changes nothing.
+  3: () => {
+    const cfg = readJsonFile(CONFIG_PATH, null);
+    if (!cfg || typeof cfg !== "object") return "no config file to migrate";
+    const legacy = ["typesafe", "gateway"].filter((id) => cfg[id] && typeof cfg[id] === "object");
+    if (legacy.length === 0) return "config already uses the providers map";
+
+    const providers = { ...(cfg.providers || {}) };
+    for (const id of legacy) {
+      providers[id] = { ...cfg[id], ...(providers[id] || {}) };
+      delete cfg[id];
+    }
+    writeJsonAtomic(CONFIG_PATH, { ...cfg, providers });
+    try {
+      // It may hold an API key, and the move must not widen its permissions.
+      chmodSync(CONFIG_PATH, 0o600);
+    } catch {
+      /* best effort on platforms without POSIX modes */
+    }
+    return `moved ${legacy.join(", ")} into providers.* in ${CONFIG_PATH}`;
+  },
 };
 
+/**
+ * Files that only an older version could have written. Their presence is what
+ * makes an install "existing"; the state directory alone is not, because it
+ * also holds things a fresh install creates for its own reasons - the provider
+ * plugin directory, for one. Keying off the directory reported every new
+ * install as three versions behind.
+ */
+const LEGACY_STATE_FILES = ["cache.json", "stats.json"];
+
 export function readStateVersion() {
-  // A state dir that exists but has no version file predates versioning, so it
-  // is v1. A dir that does not exist at all is a fresh install and needs no
-  // migration.
-  if (!existsSync(STATE_DIR)) return STATE_VERSION;
-  return readJsonFile(VERSION_PATH, { version: 1 }).version || 1;
+  if (existsSync(VERSION_PATH)) return readJsonFile(VERSION_PATH, { version: 1 }).version || 1;
+  // No version file. Older state means v1; nothing at all means a fresh install
+  // with nothing to migrate.
+  const hasOldState = LEGACY_STATE_FILES.some((f) => existsSync(join(STATE_DIR, f)));
+  return hasOldState ? 1 : STATE_VERSION;
 }
 
 /**

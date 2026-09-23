@@ -22,7 +22,7 @@ const DEFAULT_BRANCH = "main";
  * destroy their results silently. Reference material is not worth that; re-clone
  * to refresh it.
  */
-const TRACKED = ["src", "bin", "package.json", "README.md", "LICENSE", "install.sh"];
+const TRACKED = ["src", "bin", "examples", "package.json", "README.md", "LICENSE", "install.sh"];
 
 const LOCK_PATH = join(PKG_ROOT, ".jev-update.lock");
 const LOCK_STALE_MS = 10 * 60 * 1000;

@@ -2,7 +2,15 @@
 import { fileURLToPath } from "node:url";
 import { chmodSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { loadConfig, resolveProvider, maskKey, CONFIG_PATH, STATE_DIR } from "../src/config.mjs";
+import { loadConfig, maskKey, CONFIG_PATH, STATE_DIR } from "../src/config.mjs";
+import {
+  resolveProvider,
+  loadProviders,
+  providerConfig,
+  providerKey,
+  FALLBACK_ID,
+  USER_PROVIDER_DIR,
+} from "../src/providers/index.mjs";
 import { setLogLevel, log } from "../src/log.mjs";
 import { buildPlan, STATE_ON, STATE_NAME_ONLY, STATE_HIDDEN } from "../src/gate.mjs";
 import {
@@ -29,9 +37,10 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a.startsWith("--")) {
       const [k, inline] = a.slice(2).split("=");
-      if (inline !== undefined) out[k] = inline;
-      else if (argv[i + 1] && !argv[i + 1].startsWith("--")) out[k] = argv[++i];
-      else out[k] = true;
+      const value = inline !== undefined ? inline : argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[++i] : true;
+      // --set is the only repeatable flag: several per-provider keys in one go.
+      if (k === "set") (out.set ||= []).push(value);
+      else out[k] = value;
     } else out._.push(a);
   }
   return out;
@@ -278,20 +287,50 @@ function cmdRestore() {
  * Written 0600 because it can hold an API key. An environment variable still
  * takes precedence over anything stored here.
  */
-function cmdConfig(args) {
-  const target = args.provider === "typesafe" ? "typesafe" : "gateway";
+async function cmdConfig(args) {
+  const providers = await loadProviders();
+  // Which provider's settings are being edited. Defaults to the one being
+  // selected, so `config --provider open-jev --base-url ...` does the obvious
+  // thing in a single command.
+  const target = args.for || (args.provider && args.provider !== "auto" ? args.provider : null);
+
   const writes = {};
   if (args["base-url"]) writes.baseUrl = args["base-url"];
   if (args["api-key"]) writes.apiKey = args["api-key"];
   if (args.model) writes.model = args.model;
+  for (const pair of args.set || []) {
+    const i = String(pair).indexOf("=");
+    if (i < 0) {
+      console.error(`--set expects key=value (got ${pair})`);
+      return 1;
+    }
+    const key = pair.slice(0, i);
+    const raw = pair.slice(i + 1);
+    // JSON where it parses, so numbers and booleans do not land as strings and
+    // silently fail a `?? provider.calibrated` style check later.
+    try {
+      writes[key] = JSON.parse(raw);
+    } catch {
+      writes[key] = raw;
+    }
+  }
 
-  const touchingProvider = args.provider && Object.keys(writes).length === 0;
+  const hasWrites = Object.keys(writes).length > 0;
+  if (hasWrites && !target) {
+    console.error("say which provider to configure: --provider <id>, or --for <id> to edit one without selecting it");
+    return 1;
+  }
+  if (target && !providers.has(target)) {
+    console.error(`unknown provider "${target}" (run 'jev-skill-gate providers')`);
+    return 1;
+  }
 
-  if (Object.keys(writes).length > 0 || touchingProvider) {
+  if (hasWrites || args.provider) {
     const existing = readJsonFile(CONFIG_PATH, {});
     if (args.provider) existing.provider = args.provider;
-    if (Object.keys(writes).length > 0) {
-      existing[target] = { ...(existing[target] || {}), ...writes };
+    if (hasWrites) {
+      existing.providers = { ...(existing.providers || {}) };
+      existing.providers[target] = { ...(existing.providers[target] || {}), ...writes };
     }
     writeJsonAtomic(CONFIG_PATH, existing);
     try {
@@ -304,27 +343,64 @@ function cmdConfig(args) {
   }
 
   const cfg = cfgFromArgs(args);
-  const provider = resolveProvider(cfg);
+  const resolved = await resolveProvider(cfg);
 
   console.log("\nconfig\n");
   console.log(`  file          ${CONFIG_PATH}`);
-  console.log(`  provider      ${cfg.provider}  ->  resolved: ${provider.kind}`);
-  if (provider.kind === "fallback" && provider.reason) console.log(`                ${provider.reason}`);
-  console.log("");
-  for (const p of ["gateway", "typesafe"]) {
-    const envKey =
-      p === "gateway"
-        ? process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_KEY
-        : process.env.TYPESAFE_API_KEY || process.env.TYPESAFE_AI_API_KEY;
-    console.log(`  [${p}]`);
-    console.log(`    baseUrl     ${cfg[p].baseUrl}`);
-    console.log(`    model       ${cfg[p].model}`);
-    console.log(`    apiKey      env: ${maskKey(envKey)}   file: ${maskKey(cfg[p].apiKey)}`);
+  console.log(`  provider      ${cfg.provider}  ->  resolved: ${resolved.id}`);
+  if (resolved.reason) console.log(`                ${resolved.reason}`);
+
+  // Show the selected provider in full, plus anything the user has configured.
+  // Printing all of them turns a settings check into a wall of defaults.
+  const shown = new Set([resolved.id, ...Object.keys(cfg.providers || {})]);
+  for (const id of shown) {
+    const provider = providers.get(id);
+    if (!provider || provider.id === FALLBACK_ID) continue;
+    const conf = providerConfig(cfg, provider);
+    const envName = (provider.envKeys || []).find((k) => process.env[k]);
+    console.log(`\n  [${id}]  ${provider.label}`);
+    for (const [k, v] of Object.entries(conf)) {
+      if (k === "apiKey") continue;
+      console.log(`    ${k.padEnd(11)} ${typeof v === "object" ? JSON.stringify(v) : v}`);
+    }
+    if (provider.requiresKey || conf.apiKey || envName) {
+      const envLabel = envName ? `${envName}=${maskKey(process.env[envName])}` : "(unset)";
+      console.log(`    apiKey      env: ${envLabel}   file: ${maskKey(conf.apiKey)}`);
+    }
   }
+
   console.log(`\n  thresholds    on >= ${cfg.thresholds.on}   name-only >= ${cfg.thresholds.nameOnly}`);
   console.log(`  caps          maxOn ${cfg.maxOn}   maxNameOnly ${cfg.maxNameOnly}\n`);
-  console.log("  set values with:");
-  console.log("    jev-skill-gate config --provider gateway --api-key vck_... --base-url https://...\n");
+  console.log("  examples:");
+  console.log("    jev-skill-gate config --provider gateway --api-key vck_...");
+  console.log("    jev-skill-gate config --provider open-jev --base-url http://127.0.0.1:8791");
+  console.log("    jev-skill-gate config --for laya --set python=/usr/bin/python3.11\n");
+  return 0;
+}
+
+/**
+ * Lists every provider the tool can see, built in or dropped into the plugin
+ * directory, and whether each one is ready to use right now.
+ */
+async function cmdProviders(args) {
+  const cfg = cfgFromArgs(args);
+  const providers = await loadProviders();
+  const resolved = await resolveProvider(cfg);
+
+  console.log("\nproviders\n");
+  for (const provider of providers.values()) {
+    const selected = provider.id === resolved.id ? "*" : " ";
+    const key = providerKey(cfg, provider);
+    const state = provider.requiresKey && !key ? "no key" : provider.local ? "local" : "ready";
+    const calib = provider.calibrated ? "calibrated" : "ranking only";
+    console.log(`  ${selected} ${provider.id.padEnd(12)} ${state.padEnd(7)} ${calib.padEnd(13)} ${provider.label}`);
+    if (provider.source && provider.source !== "builtin") console.log(`    ${" ".repeat(12)} plugin: ${provider.source}`);
+  }
+  console.log(`\n  * = selected by the current config (provider: ${cfg.provider})`);
+  console.log(`\n  "calibrated" providers get threshold cutoffs; "ranking only" ones`);
+  console.log("  get top-N slicing instead, because their scores only order skills.");
+  console.log(`\n  add your own: drop a module in ${USER_PROVIDER_DIR}`);
+  console.log("  see src/providers/spec.mjs for the contract.\n");
   return 0;
 }
 
@@ -516,10 +592,10 @@ function cmdMigrate(args) {
   return 0;
 }
 
-function cmdDoctor(args) {
+async function cmdDoctor(args) {
   const cfg = cfgFromArgs(args);
   const projectDir = resolve(args.dir || process.cwd());
-  const provider = resolveProvider(cfg);
+  const resolved = await resolveProvider(cfg);
   const skills = discoverSkills({ projectDir });
   const tokens = skills.reduce((n, s) => n + s.approxTokens, 0);
 
@@ -528,7 +604,11 @@ function cmdDoctor(args) {
   console.log("\njev-skill-gate doctor\n");
   check(Number(process.versions.node.split(".")[0]) >= 18, "node >= 18", `v${process.versions.node}`);
   check(skills.length > 0, "skills discovered", `${skills.length} skills, ~${tokens} tokens`);
-  check(provider.kind !== "fallback", "jev provider", provider.kind === "fallback" ? provider.reason : provider.kind);
+  check(
+    resolved.id !== FALLBACK_ID,
+    "scoring provider",
+    resolved.id === FALLBACK_ID ? resolved.reason || "local TF-IDF" : `${resolved.id} (${resolved.provider.label})`
+  );
   check(true, "config", CONFIG_PATH);
   const sv = readStateVersion();
   check(
@@ -557,6 +637,7 @@ jev-skill-gate — gate Claude Code's skill manifest with TypeSafe Jev
   migrate     run state migrations only (update does this for you)
   stats       lifetime tokens saved, cost, and how often it has run
   config      show or set provider, base URL, API key and model
+  providers   list scoring providers and which one is selected
   doctor      check the setup
   clear-cache drop cached scores
   hook        internal: run as a Claude Code hook
@@ -564,7 +645,9 @@ jev-skill-gate — gate Claude Code's skill manifest with TypeSafe Jev
 Options
   --dir <path>              project directory (default: cwd)
   --prompt <text>           score against a request as well as the project
-  --provider <name>         auto | typesafe | gateway | fallback | disabled
+  --provider <id>            select a provider (see 'providers'), or auto | disabled
+  --for <id>                (config) edit a provider without selecting it
+  --set <key=value>         (config) set one per-provider key; repeatable
   --scope <auto|project|user>  where to write skillOverrides
   --threshold-on <0..1>     full-description cutoff (default 0.6)
   --threshold-name-only <n> name-only cutoff (default 0.25)
@@ -579,7 +662,12 @@ Environment
   TYPESAFE_API_KEY          TypeSafe direct
   AI_GATEWAY_API_KEY        Vercel AI Gateway
 
-Without a key it uses a local TF-IDF scorer, so it works with no setup at all.
+Hosted Jev is the most accurate option. Local models work too - Open-Jev over
+HTTP, laya or laya-mlx as a local process - and cost nothing to run:
+
+  jev-skill-gate config --provider open-jev --base-url http://127.0.0.1:8791
+
+Without any of them it uses a local TF-IDF scorer, so it works with no setup.
 `;
 
 async function main() {
@@ -597,6 +685,7 @@ async function main() {
     restore: () => cmdRestore(),
     doctor: cmdDoctor,
     config: cmdConfig,
+    providers: cmdProviders,
     stats: cmdStats,
     update: cmdUpdate,
     migrate: cmdMigrate,

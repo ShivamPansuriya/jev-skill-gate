@@ -14,7 +14,7 @@ if (!process.env.JEV_TEST_SANDBOX) {
 }
 
 import { strict as assert } from "node:assert";
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync, cpSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 
@@ -40,7 +40,7 @@ import { setLogLevel } from "../src/log.mjs";
 import { readStats, recordRun, resetStats } from "../src/stats.mjs";
 import { cacheKey } from "../src/cache.mjs";
 import { runMigrations, readStateVersion, STATE_VERSION, STATE_VERSION_FILE } from "../src/migrate.mjs";
-import { compareVersions } from "../src/update.mjs";
+import { compareVersions, TRACKED_PATHS, PRESERVED_PATHS } from "../src/update.mjs";
 
 setLogLevel("silent");
 
@@ -687,6 +687,43 @@ test("version comparison orders correctly", () => {
   assert.equal(compareVersions("1.0.0", "0.9.9"), 1);
   assert.equal(compareVersions("0.2", "0.2.0"), 0, "missing segments count as zero");
   assert.equal(compareVersions("0.10.0", "0.9.0"), 1, "compares numerically, not as text");
+});
+
+test("an update removes files the new version deleted", () => {
+  // An overlay copy leaves a deleted module behind, where it keeps satisfying
+  // imports in files that should have failed loudly. src/jev.mjs did exactly
+  // that when providers/ replaced it.
+  const dir = mkdtempSync(join(tmpdir(), "jev-upd-"));
+  try {
+    const oldInstall = join(dir, "install");
+    const incoming = join(dir, "incoming");
+    mkdirSync(join(oldInstall, "src"), { recursive: true });
+    mkdirSync(join(incoming, "src"), { recursive: true });
+    writeFileSync(join(oldInstall, "src", "gone.mjs"), "export const x = 1;\n");
+    writeFileSync(join(oldInstall, "src", "kept.mjs"), "old\n");
+    writeFileSync(join(incoming, "src", "kept.mjs"), "new\n");
+
+    // What applyUpdate does to a tracked directory.
+    rmSync(join(oldInstall, "src"), { recursive: true, force: true });
+    cpSync(join(incoming, "src"), join(oldInstall, "src"), { recursive: true, force: true });
+
+    assert.ok(!existsSync(join(oldInstall, "src", "gone.mjs")), "deleted file must not survive");
+    assert.equal(readFileSync(join(oldInstall, "src", "kept.mjs"), "utf8"), "new\n");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("every module a tracked path imports is itself tracked", () => {
+  // test/ and eval/ import from src/. If they are not replaced together, an
+  // update leaves code that calls an API that has since changed shape - which
+  // is how eval/run-eval.mjs ended up calling an async resolveProvider
+  // synchronously.
+  for (const required of ["src", "bin", "test", "eval"]) {
+    assert.ok(TRACKED_PATHS.includes(required), `${required} must be replaced by an update`);
+  }
+  // Results the user paid for are the one exception, and must be restored.
+  assert.ok(PRESERVED_PATHS.includes("eval/raw-scores.json"));
 });
 
 test("a remote that is behind is recognised as a downgrade", () => {

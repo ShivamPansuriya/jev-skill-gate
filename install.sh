@@ -50,7 +50,7 @@ for must in package.json bin src; do
 done
 
 mkdir -p "$DEST"
-for p in src bin eval examples package.json README.md LICENSE install.sh; do
+for p in src bin test eval examples package.json README.md LICENSE install.sh; do
   [ -e "$SRC/$p" ] && cp -R "$SRC/$p" "$DEST/"
 done
 chmod +x "$DEST/bin/jev-skill-gate.mjs" 2>/dev/null || true

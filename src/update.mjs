@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync, existsSync, mkdtempSync, rmSync, cpSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdtempSync, rmSync, cpSync, mkdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -17,12 +17,21 @@ const DEFAULT_BRANCH = "main";
  * directory is left alone, and user state under ~/.claude is never touched at
  * all - that is what migrations are for.
  *
- * `eval/` is deliberately NOT tracked. A user who runs the eval writes their own
- * raw-scores.json there, and replacing it with the repository's copy would
- * destroy their results silently. Reference material is not worth that; re-clone
- * to refresh it.
+ * `test` and `eval` are tracked, and they have to be. They import from `src`,
+ * so leaving them at an older version after src moves on means an install that
+ * carries code which no longer runs - and the failure appears in a dev tool
+ * long after the update that caused it.
  */
-const TRACKED = ["src", "bin", "examples", "package.json", "README.md", "LICENSE", "install.sh"];
+export const TRACKED_PATHS = ["src", "bin", "test", "eval", "examples", "package.json", "README.md", "LICENSE", "install.sh"];
+
+/**
+ * Files inside a tracked path that belong to the user, not to the project.
+ * Restored after the copy so an update never destroys them.
+ *
+ * Running the eval costs real API credits, so these results are expensive and
+ * irreplaceable in a way that nothing else in the install directory is.
+ */
+export const PRESERVED_PATHS = ["eval/raw-scores.json", "eval/raw-scores.local.json"];
 
 const LOCK_PATH = join(PKG_ROOT, ".jev-update.lock");
 const LOCK_STALE_MS = 10 * 60 * 1000;
@@ -161,23 +170,43 @@ export async function applyUpdate(remote, { dryRun = false } = {}) {
       if (!existsSync(join(extracted, must))) throw new Error(`archive is missing ${must}; refusing to overwrite`);
     }
 
-    const changed = TRACKED.filter((p) => existsSync(join(extracted, p)));
+    const changed = TRACKED_PATHS.filter((p) => existsSync(join(extracted, p)));
     if (dryRun) return { changed, backup: null };
 
     const backup = join(work, "backup");
     mkdirSync(backup, { recursive: true });
-    for (const p of TRACKED) {
+    for (const p of TRACKED_PATHS) {
       const from = join(PKG_ROOT, p);
       if (existsSync(from)) cpSync(from, join(backup, p), { recursive: true });
     }
 
     try {
       for (const p of changed) {
-        cpSync(join(extracted, p), join(PKG_ROOT, p), { recursive: true, force: true });
+        const dest = join(PKG_ROOT, p);
+        // Replace a tracked directory wholesale rather than copying over it.
+        //
+        // An overlay leaves behind every file the new version deleted, and a
+        // stale module is worse than a missing one: src/jev.mjs survived the
+        // move to providers/ and kept satisfying imports in older sibling
+        // files, so the breakage surfaced far from its cause. These are our
+        // own directories - user state lives under ~/.claude, and user plugins
+        // in ~/.claude/jev-skill-gate/providers - so nothing of theirs is here
+        // to lose. The backup above covers the copy failing midway.
+        if (statSync(join(extracted, p)).isDirectory() && existsSync(dest)) {
+          rmSync(dest, { recursive: true, force: true });
+        }
+        cpSync(join(extracted, p), dest, { recursive: true, force: true });
+      }
+      // Results a user generated themselves are put back: `eval` is tracked so
+      // its code stays in step with src/, but re-running the eval costs real
+      // money and silently overwriting someone's scores would be theft.
+      for (const p of PRESERVED_PATHS) {
+        const saved = join(backup, p);
+        if (existsSync(saved)) cpSync(saved, join(PKG_ROOT, p), { force: true });
       }
     } catch (err) {
       // Put back what we had, then surface the original failure.
-      for (const p of TRACKED) {
+      for (const p of TRACKED_PATHS) {
         const b = join(backup, p);
         if (existsSync(b)) cpSync(b, join(PKG_ROOT, p), { recursive: true, force: true });
       }
@@ -188,7 +217,7 @@ export async function applyUpdate(remote, { dryRun = false } = {}) {
     // would be too late: the workspace holding the only copy of the old install
     // is deleted on the way out, leaving nothing to roll back to.
     const rollback = (why) => {
-      for (const p of TRACKED) {
+      for (const p of TRACKED_PATHS) {
         const b = join(backup, p);
         if (existsSync(b)) cpSync(b, join(PKG_ROOT, p), { recursive: true, force: true });
       }
